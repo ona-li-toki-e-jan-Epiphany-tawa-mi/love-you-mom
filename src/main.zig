@@ -47,11 +47,11 @@ pub fn main() !void {
     };
 
     try tty.cursor(false);
-    try tty.update();
 
     var colorIndexOffset: usize = 0;
     var shutterSize: f32 = 1.0;
     while (true) {
+        try tty.clear();
 
         try drawShutter(&tty, shutterSize, colorIndexOffset);
         colorIndexOffset +%= 1;
