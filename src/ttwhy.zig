@@ -69,6 +69,7 @@ pub const Tty = struct {
     writer: Writer,
     width: usize,
     height: usize,
+    allocator: Allocator,
 
     pub fn init(file: File, allocator: Allocator) Error!Tty {
         var tty = Tty{
@@ -76,17 +77,18 @@ pub const Tty = struct {
             .writer = writer(file),
             .width = undefined,
             .height = undefined,
+            .allocator = allocator,
         };
 
         if (!posix.isatty(file.handle)) {
             return Error.NotATty;
         }
-        try tty.update(allocator);
+        try tty.update();
 
         return tty;
     }
 
-    pub fn update(self: *Tty, allocator: Allocator) Error!void {
+    pub fn update(self: *Tty) Error!void {
         self.writer.flush() catch return Error.WriteFail;
 
         getSize: {
@@ -101,7 +103,7 @@ pub const Tty = struct {
             }
             // Else try COLUMNS and LINES environment variables.
             getEnv: {
-                var env = process.getEnvMap(allocator) catch break :getEnv;
+                var env = process.getEnvMap(self.allocator) catch break :getEnv;
                 defer env.deinit();
                 const width = env.get("COLUMNS") orelse break :getEnv;
                 const height = env.get("LINES") orelse break :getEnv;

@@ -20,7 +20,7 @@ pub fn main() !void {
     };
 
     try tty.cursor(false);
-    try tty.update(allocator);
+    try tty.update();
 
     var colorIndexStart: usize = 0;
     while (true) {
@@ -42,8 +42,8 @@ pub fn main() !void {
                 try tty.write(" ");
             }
         }
-        try tty.update(allocator);
 
+        try tty.update();
         time.sleep(500_000_000);
     }
 }
