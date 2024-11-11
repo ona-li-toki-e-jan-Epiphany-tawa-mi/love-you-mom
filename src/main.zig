@@ -11,6 +11,8 @@ const mem = std.mem;
 const process = std.process;
 
 const Allocator = mem.Allocator;
+const BufferedWriter = io.BufferedWriter;
+const File = fs.File;
 
 const TtyError = error{
     NotATty,
@@ -18,14 +20,22 @@ const TtyError = error{
     WriteFail,
 };
 
+const TtyWriter = io.BufferedWriter(1096, File.Writer);
+
+inline fn ttyWriter(file: File) TtyWriter {
+    return .{ .unbuffered_writer = file.writer() };
+}
+
 const Tty = struct {
-    file: fs.File,
+    file: File,
+    writer: TtyWriter,
     width: usize,
     height: usize,
 
-    fn init(file: fs.File, allocator: Allocator) TtyError!Tty {
+    fn init(file: File, allocator: Allocator) TtyError!Tty {
         var tty = Tty{
             .file = file,
+            .writer = ttyWriter(file),
             .width = undefined,
             .height = undefined,
         };
@@ -62,21 +72,23 @@ const Tty = struct {
             // Else error.
             return TtyError.UnknownSize;
         }
+
+        self.writer.flush() catch return TtyError.WriteFail;
     }
 
-    inline fn write(self: Tty, bytes: []const u8) TtyError!void {
-        self.file.writeAll(bytes) catch return TtyError.WriteFail;
+    inline fn write(self: *Tty, bytes: []const u8) TtyError!void {
+        _ = self.writer.write(bytes) catch return TtyError.WriteFail;
     }
 
-    inline fn writeFmt(self: Tty, comptime format: []const u8, args: anytype) TtyError!void {
-        fmt.format(self.file.writer(), format, args) catch return TtyError.WriteFail;
+    inline fn writeFmt(self: *Tty, comptime format: []const u8, args: anytype) TtyError!void {
+        fmt.format(self.writer.writer(), format, args) catch return TtyError.WriteFail;
     }
 
-    inline fn home(self: Tty) TtyError!void {
+    inline fn home(self: *Tty) TtyError!void {
         try self.write("\x1B[H");
     }
 
-    inline fn clear(self: Tty) TtyError!void {
+    inline fn clear(self: *Tty) TtyError!void {
         try self.write("\x1B[2J");
     }
 };
@@ -107,7 +119,7 @@ pub fn main() !void {
     const allocator = heap.c_allocator;
     const stdin = io.getStdIn();
 
-    const tty = Tty.init(stdin, allocator) catch |err| switch (err) {
+    var tty = Tty.init(stdin, allocator) catch |err| switch (err) {
         TtyError.NotATty => {
             log.err("stdin is not a tty! You need to use this program with a terminal emulator!", .{});
             return err;
@@ -123,6 +135,7 @@ pub fn main() !void {
     try tty.write("Hellow world!\n");
     try tty.writeFmt("W: {d}!\n", .{tty.width});
     try tty.writeFmt("H: {d}!\n", .{tty.height});
+    try tty.update(allocator);
 
     time.sleep(1_000_000_000);
 }
