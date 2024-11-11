@@ -19,14 +19,17 @@ pub fn main() !void {
         else => |leftover_err| return leftover_err,
     };
 
-    //const oldTermios = try configure(tty);
-    //defer reset(tty, oldTermios) catch {};
-
     try tty.cursor(false);
     try tty.update(allocator);
 
-    var colorIndex: usize = 0;
+    var colorIndexStart: usize = 0;
     while (true) {
+        var colorIndex: usize = colorIndexStart;
+        colorIndexStart += 1;
+        if (colorIndexStart >= ttwhy.foregrounds.len) {
+            colorIndexStart = 0;
+        }
+
         try tty.home();
         for (0..tty.height) |_| {
             try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex]);
@@ -41,6 +44,6 @@ pub fn main() !void {
         }
         try tty.update(allocator);
 
-        time.sleep(250_000_000);
+        time.sleep(500_000_000);
     }
 }
