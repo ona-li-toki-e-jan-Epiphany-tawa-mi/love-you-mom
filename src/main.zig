@@ -36,7 +36,11 @@ pub fn main() !void {
 
     var tty = Tty.init(stdin, allocator) catch |err| switch (err) {
         ttwhy.Error.NotATty => {
-            log.err("stdin is not a tty! You need to use this program with a terminal emulator!", .{});
+            log.err("stdin is not a tty! You need to use this program with a terminal emulator", .{});
+            return err;
+        },
+        ttwhy.Error.UnknownSize => {
+            log.err("Unable to get terminal size", .{});
             return err;
         },
         else => |leftover_err| return leftover_err,
