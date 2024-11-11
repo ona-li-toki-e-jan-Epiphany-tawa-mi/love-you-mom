@@ -11,7 +11,6 @@ const mem = std.mem;
 const process = std.process;
 
 const Allocator = mem.Allocator;
-const BufferedWriter = io.BufferedWriter;
 const File = fs.File;
 
 const TtyError = error{
@@ -20,10 +19,41 @@ const TtyError = error{
     WriteFail,
 };
 
-const TtyWriter = io.BufferedWriter(1096, File.Writer);
+const TtyWriter = io.BufferedWriter(4096, File.Writer);
 
 inline fn ttyWriter(file: File) TtyWriter {
     return .{ .unbuffered_writer = file.writer() };
+}
+
+const Foreground = enum(u8) {
+    BLACK = 30,
+    RED = 31,
+    GREEN = 32,
+    YELLOW = 33,
+    BLUE = 34,
+    MAGENTA = 35,
+    CYAN = 36,
+    WHITE = 37,
+};
+
+const Background = enum(u8) {
+    BLACK = 40,
+    RED = 41,
+    GREEN = 42,
+    YELLOW = 43,
+    BLUE = 44,
+    MAGENTA = 45,
+    CYAN = 46,
+    WHITE = 47,
+};
+
+fn arrayFromEnum(comptime E: type) [@typeInfo(E).Enum.fields.len]E {
+    const fields = @typeInfo(E).Enum.fields;
+    var array: [fields.len]E = undefined;
+    for (fields, &array) |field, *element| {
+        element.* = @enumFromInt(field.value);
+    }
+    return array;
 }
 
 const Tty = struct {
@@ -49,6 +79,8 @@ const Tty = struct {
     }
 
     fn update(self: *Tty, allocator: Allocator) TtyError!void {
+        self.writer.flush() catch return TtyError.WriteFail;
+
         getSize: {
             // First try ioctl.
             {
@@ -72,12 +104,10 @@ const Tty = struct {
             // Else error.
             return TtyError.UnknownSize;
         }
-
-        self.writer.flush() catch return TtyError.WriteFail;
     }
 
     inline fn write(self: *Tty, bytes: []const u8) TtyError!void {
-        _ = self.writer.write(bytes) catch return TtyError.WriteFail;
+        self.writer.writer().writeAll(bytes) catch return TtyError.WriteFail;
     }
 
     inline fn writeFmt(self: *Tty, comptime format: []const u8, args: anytype) TtyError!void {
@@ -90,6 +120,25 @@ const Tty = struct {
 
     inline fn clear(self: *Tty) TtyError!void {
         try self.write("\x1B[2J");
+    }
+
+    inline fn color(self: *Tty, foreground: Foreground, background: Background) TtyError!void {
+        try self.writeFmt("\x1B[{d};{d}m", .{
+            @intFromEnum(foreground),
+            @intFromEnum(background),
+        });
+    }
+
+    inline fn defaultColor(self: *Tty) TtyError!void {
+        try self.write("\x1B[39;49m");
+    }
+
+    fn cursor(self: *Tty, enable: bool) TtyError!void {
+        if (enable) {
+            try self.write("\x1B[?25h");
+        } else {
+            try self.write("\x1B[?25l");
+        }
     }
 };
 
@@ -130,12 +179,28 @@ pub fn main() !void {
     //const oldTermios = try configure(tty);
     //defer reset(tty, oldTermios) catch {};
 
-    try tty.clear();
-    try tty.home();
-    try tty.write("Hellow world!\n");
-    try tty.writeFmt("W: {d}!\n", .{tty.width});
-    try tty.writeFmt("H: {d}!\n", .{tty.height});
+    const foregrounds = comptime arrayFromEnum(Foreground);
+    const backgrounds = comptime arrayFromEnum(Background);
+
+    try tty.cursor(false);
     try tty.update(allocator);
 
-    time.sleep(1_000_000_000);
+    var colorIndex: usize = 0;
+    while (true) {
+        try tty.home();
+        for (0..tty.height) |_| {
+            try tty.color(foregrounds[colorIndex], backgrounds[colorIndex]);
+            colorIndex += 1;
+            if (colorIndex >= foregrounds.len) {
+                colorIndex = 0;
+            }
+
+            for (0..tty.width) |_| {
+                try tty.write(" ");
+            }
+        }
+        try tty.update(allocator);
+
+        time.sleep(250_000_000);
+    }
 }
