@@ -3,16 +3,19 @@ const log = std.log;
 const io = std.io;
 const time = std.time;
 const heap = std.heap;
+const debug = std.debug;
 const ttwhy = @import("ttwhy.zig");
 
 const Tty = ttwhy.Tty;
 
 fn drawShutter(tty: *Tty, colorIndexOffset: usize) !void {
+    debug.assert(0.0 <= size and 1.0 >= size);
+
+    const shutterHeight: usize = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
     var colorIndex: usize = colorIndexOffset;
 
     try tty.home();
-
-    for (0..tty.height) |_| {
+    for (0..shutterHeight) |_| {
         colorIndex %= ttwhy.foregrounds.len;
         try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex]);
         colorIndex += 1;
@@ -39,9 +42,15 @@ pub fn main() !void {
     try tty.update();
 
     var colorIndexOffset: usize = 0;
+    var shutterSize: f32 = 1.0;
     while (true) {
-        try drawShutter(&tty, colorIndexOffset);
+
+        try drawShutter(&tty, shutterSize, colorIndexOffset);
         colorIndexOffset +%= 1;
+        shutterSize -= 0.025;
+        if (shutterSize < 0.0) {
+            shutterSize = 0;
+        }
 
         try tty.update();
         time.sleep(500_000_000);
