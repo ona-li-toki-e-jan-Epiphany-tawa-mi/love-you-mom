@@ -7,6 +7,22 @@ const ttwhy = @import("ttwhy.zig");
 
 const Tty = ttwhy.Tty;
 
+fn drawShutter(tty: *Tty, colorIndexOffset: usize) !void {
+    var colorIndex: usize = colorIndexOffset;
+
+    try tty.home();
+
+    for (0..tty.height) |_| {
+        colorIndex %= ttwhy.foregrounds.len;
+        try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex]);
+        colorIndex += 1;
+
+        for (0..tty.width) |_| {
+            try tty.write(" ");
+        }
+    }
+}
+
 pub fn main() !void {
     const allocator = heap.c_allocator;
     const stdin = io.getStdIn();
@@ -22,26 +38,10 @@ pub fn main() !void {
     try tty.cursor(false);
     try tty.update();
 
-    var colorIndexStart: usize = 0;
+    var colorIndexOffset: usize = 0;
     while (true) {
-        var colorIndex: usize = colorIndexStart;
-        colorIndexStart += 1;
-        if (colorIndexStart >= ttwhy.foregrounds.len) {
-            colorIndexStart = 0;
-        }
-
-        try tty.home();
-        for (0..tty.height) |_| {
-            try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex]);
-            colorIndex += 1;
-            if (colorIndex >= ttwhy.foregrounds.len) {
-                colorIndex = 0;
-            }
-
-            for (0..tty.width) |_| {
-                try tty.write(" ");
-            }
-        }
+        try drawShutter(&tty, colorIndexOffset);
+        colorIndexOffset +%= 1;
 
         try tty.update();
         time.sleep(500_000_000);
