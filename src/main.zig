@@ -8,7 +8,11 @@ const ttwhy = @import("ttwhy.zig");
 
 const Tty = ttwhy.Tty;
 
-fn drawShutter(tty: *Tty, colorIndexOffset: usize) !void {
+fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
+    comptime {
+        std.debug.assert(ttwhy.foregrounds.len == ttwhy.backgrounds.len);
+        std.debug.assert(0 < ttwhy.foregrounds.len);
+    }
     debug.assert(0.0 <= size and 1.0 >= size);
 
     const shutterHeight: usize = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
