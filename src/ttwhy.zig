@@ -12,6 +12,7 @@ const Allocator = mem.Allocator;
 const File = fs.File;
 
 pub const GraphicMode = enum(u8) {
+    RESET_ALL = 0,
     // Foreground colors.
     FOREGROUND_BLACK = 30,
     FOREGROUND_RED = 31,
@@ -36,6 +37,18 @@ pub const GraphicMode = enum(u8) {
     BOLD = 1,
     DIM = 2,
     RESET_BOLD_DIM = 22,
+    ITALIC = 3,
+    RESET_ITALIC = 23,
+    UNDERLINE = 4,
+    RESET_UNDERLINE = 24,
+    BLINK = 5,
+    RESET_BLINK = 25,
+    REVERSE = 7,
+    RESET_REVERSE = 27,
+    INVISIBLE = 8,
+    RESET_INVISIBLE = 28,
+    STRIKETHROUGH = 9,
+    RESET_STRIKETHROUGH = 29,
 };
 
 pub const Error = error{
@@ -133,7 +146,7 @@ pub const Tty = struct {
     }
 
     pub inline fn resetGraphicModes(self: *Tty) Error!void {
-        try self.write("\x1B[0m");
+        try self.writeFmt("\x1B[{d}m", .{@intFromEnum(GraphicMode.RESET_ALL)});
     }
 
     pub fn cursor(self: *Tty, enable: bool) Error!void {
