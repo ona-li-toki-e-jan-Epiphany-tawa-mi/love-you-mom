@@ -6,60 +6,37 @@ const c = std.c;
 const fmt = std.fmt;
 const mem = std.mem;
 const process = std.process;
+const debug = std.debug;
 
 const Allocator = mem.Allocator;
 const File = fs.File;
 
-////////////////////////////////////////////////////////////////////////////////
-// Colors                                                                     //
-////////////////////////////////////////////////////////////////////////////////
-
-pub const Foreground = enum(u8) {
-    BLACK = 30,
-    RED = 31,
-    GREEN = 32,
-    YELLOW = 33,
-    BLUE = 34,
-    MAGENTA = 35,
-    CYAN = 36,
-    WHITE = 37,
-    DEFAULT = 39,
-};
-
-pub const Background = enum(u8) {
-    BLACK = 40,
-    RED = 41,
-    GREEN = 42,
-    YELLOW = 43,
-    BLUE = 44,
-    MAGENTA = 45,
-    CYAN = 46,
-    WHITE = 47,
-    DEFAULT = 49,
-};
-
-pub const Style = enum(u8) {
+pub const GraphicMode = enum(u8) {
+    // Foreground colors.
+    FOREGROUND_BLACK = 30,
+    FOREGROUND_RED = 31,
+    FOREGROUND_GREEN = 32,
+    FOREGROUND_YELLOW = 33,
+    FOREGROUND_BLUE = 34,
+    FOREGROUND_MAGENTA = 35,
+    FOREGROUND_CYAN = 36,
+    FOREGROUND_WHITE = 37,
+    FOREGROUND_DEFAULT = 39,
+    // Background colors.
+    BACKGROUND_BLACK = 40,
+    BACKGROUND_RED = 41,
+    BACKGROUND_GREEN = 42,
+    BACKGROUND_YELLOW = 43,
+    BACKGROUND_BLUE = 44,
+    BACKGROUND_MAGENTA = 45,
+    BACKGROUND_CYAN = 46,
+    BACKGROUND_WHITE = 47,
+    BACKGROUND_DEFAULT = 49,
+    // Styles.
     BOLD = 1,
     DIM = 2,
-    DEFAULT = 22,
+    RESET_BOLD_DIM = 22,
 };
-
-fn arrayFromEnum(comptime E: type) [@typeInfo(E).Enum.fields.len]E {
-    const fields = @typeInfo(E).Enum.fields;
-    var array: [fields.len]E = undefined;
-    for (fields, &array) |field, *element| {
-        element.* = @enumFromInt(field.value);
-    }
-    return array;
-}
-
-pub const foregrounds = arrayFromEnum(Foreground);
-pub const backgrounds = arrayFromEnum(Background);
-pub const styles = arrayFromEnum(Style);
-
-////////////////////////////////////////////////////////////////////////////////
-// TTY                                                                        //
-////////////////////////////////////////////////////////////////////////////////
 
 pub const Error = error{
     NotATty,
@@ -142,16 +119,21 @@ pub const Tty = struct {
         try self.write("\x1B[2J");
     }
 
-    pub inline fn color(self: *Tty, foreground: Foreground, background: Background, style: Style) Error!void {
-        try self.writeFmt("\x1B[{d};{d};{d}m", .{
-            @intFromEnum(style),
-            @intFromEnum(foreground),
-            @intFromEnum(background),
-        });
+    pub fn setGraphicModes(self: *Tty, graphicModes: []const GraphicMode) Error!void {
+        debug.assert(0 != graphicModes.len);
+
+        try self.write("\x1B[");
+        var first = true;
+        for (graphicModes) |graphicMode| {
+            if (!first) try self.write(";");
+            try self.writeFmt("{d}", .{@intFromEnum(graphicMode)});
+            first = false;
+        }
+        try self.write("m");
     }
 
-    pub inline fn defaultColor(self: *Tty) Error!void {
-        try self.color(Foreground.DEFAULT, Background.DEFAULT, Style.DEFAULT);
+    pub inline fn resetGraphicModes(self: *Tty) Error!void {
+        try self.write("\x1B[0m");
     }
 
     pub fn cursor(self: *Tty, enable: bool) Error!void {

@@ -7,34 +7,37 @@ const debug = std.debug;
 const ttwhy = @import("ttwhy.zig");
 
 const Tty = ttwhy.Tty;
-const Foreground = ttwhy.Foreground;
-const Background = ttwhy.Background;
-const Style = ttwhy.Style;
+const GraphicMode = ttwhy.GraphicMode;
 
 fn drawShutter(tty: *Tty, size: f32) !void {
-    comptime {
-        std.debug.assert(ttwhy.foregrounds.len == ttwhy.backgrounds.len);
-        std.debug.assert(0 < ttwhy.foregrounds.len);
-    }
     debug.assert(0.0 <= size and 1.0 >= size);
-
     const shutterHeight: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
     if (0 == shutterHeight) return;
 
     try tty.home();
+    try tty.resetGraphicModes();
+
     var y = shutterHeight;
     while (true) {
         const bottomOffset = shutterHeight -| y;
         switch (bottomOffset) {
             // Shutter bottom color.
-            0, 2 => try tty.color(Foreground.DEFAULT, Background.YELLOW, Style.BOLD),
-            1 => try tty.color(Foreground.DEFAULT, Background.BLACK, Style.DEFAULT),
+            0, 2 => try tty.setGraphicModes(&.{
+                GraphicMode.BOLD,
+                GraphicMode.BACKGROUND_YELLOW,
+            }),
+            1 => try tty.setGraphicModes(&.{
+                GraphicMode.RESET_BOLD_DIM,
+                GraphicMode.BACKGROUND_BLACK,
+            }),
             // Shutter body color.
-            else => try tty.color(
-                Foreground.DEFAULT,
-                if (0 == y % 2) Background.WHITE else Background.CYAN,
-                Style.DEFAULT,
-            ),
+            else => try tty.setGraphicModes(&.{
+                GraphicMode.RESET_BOLD_DIM,
+                if (0 == y % 2)
+                    GraphicMode.BACKGROUND_WHITE
+                else
+                    GraphicMode.BACKGROUND_CYAN,
+            }),
         }
 
         try tty.goto(0, y);
@@ -45,8 +48,6 @@ fn drawShutter(tty: *Tty, size: f32) !void {
         if (0 == y) break;
         y -|= 1;
     }
-
-    try tty.defaultColor();
 }
 
 const Point = [2]f32;
@@ -228,10 +229,10 @@ pub fn main() !void {
 
     var shutterSize: f32 = 1.0;
     while (true) {
-        try tty.defaultColor();
+        try tty.resetGraphicModes();
         try tty.clear();
 
-        try tty.color(Foreground.GREEN, Background.BLACK, Style.BOLD);
+        try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_GREEN });
         for (loveYouMomText) |letter| {
             try drawShape(&tty, letter);
         }
