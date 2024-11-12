@@ -104,7 +104,7 @@ pub const Tty = struct {
     }
 
     pub inline fn writeFmt(self: *Tty, comptime format: []const u8, args: anytype) Error!void {
-        fmt.format(self.writer.writer(), format, args) catch return Error.WriteFail;
+        self.writer.writer().print(format, args) catch return Error.WriteFail;
     }
 
     pub inline fn home(self: *Tty) Error!void {
