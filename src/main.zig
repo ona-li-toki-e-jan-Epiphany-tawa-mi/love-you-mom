@@ -11,25 +11,39 @@ const Foreground = ttwhy.Foreground;
 const Background = ttwhy.Background;
 const Style = ttwhy.Style;
 
-fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
+fn drawShutter(tty: *Tty, size: f32) !void {
     comptime {
         std.debug.assert(ttwhy.foregrounds.len == ttwhy.backgrounds.len);
         std.debug.assert(0 < ttwhy.foregrounds.len);
     }
     debug.assert(0.0 <= size and 1.0 >= size);
 
-    const shutterHeight: usize = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
-    var colorIndex: usize = colorIndexOffset;
+    const shutterHeight: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
+    if (0 == shutterHeight) return;
 
     try tty.home();
-    for (0..shutterHeight) |_| {
-        colorIndex %= ttwhy.foregrounds.len;
-        try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex], Style.BOLD);
-        colorIndex += 1;
+    var y = shutterHeight;
+    while (true) {
+        const bottomOffset = shutterHeight -| y;
+        switch (bottomOffset) {
+            // Shutter bottom color.
+            0, 2 => try tty.color(Foreground.DEFAULT, Background.YELLOW, Style.BOLD),
+            1 => try tty.color(Foreground.DEFAULT, Background.BLACK, Style.DEFAULT),
+            // Shutter body color.
+            else => try tty.color(
+                Foreground.DEFAULT,
+                if (0 == y % 2) Background.WHITE else Background.CYAN,
+                Style.DEFAULT,
+            ),
+        }
 
+        try tty.goto(0, y);
         for (0..tty.width) |_| {
             try tty.write(" ");
         }
+
+        if (0 == y) break;
+        y -|= 1;
     }
 
     try tty.defaultColor();
@@ -212,7 +226,6 @@ pub fn main() !void {
 
     try tty.cursor(false);
 
-    var colorIndexOffset: usize = 0;
     var shutterSize: f32 = 1.0;
     while (true) {
         try tty.defaultColor();
@@ -223,8 +236,7 @@ pub fn main() !void {
             try drawShape(&tty, letter);
         }
         if (shutterSize > 0.0) {
-            try drawShutter(&tty, shutterSize, colorIndexOffset);
-            colorIndexOffset +%= 11;
+            try drawShutter(&tty, shutterSize);
             shutterSize -= 0.1;
         }
 
