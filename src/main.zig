@@ -51,20 +51,23 @@ fn drawShape(tty: *Tty, letter: Shape) !void {
         const x2: i16 = @intFromFloat(lastPoint.?[0] * width);
         const y2: i16 = @intFromFloat(lastPoint.?[1] * height);
 
-        // TODO: this algo ends up in an infinite loop, hence the interation limit.
-        // please fix.
-        var iterations: u8 = 100;
         // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
-        const dx = @as(i32, @abs(x2 - x1));
+        // We handle the absolute value manually here to avoid having to convert
+        // to unsigned and back to signed numbers.
+        const dx = blk: {
+            const dx = x2 - x1;
+            break :blk (if (dx < 0) -dx else dx);
+        };
         const sx: i16 = if (x1 < x2) 1 else -1;
         var x = x1;
-        const dy = -@as(i32, @abs(y2 - y1));
+        const dy = blk: {
+            const dy = y2 - y1;
+            break :blk -(if (dy < 0) -dy else dy);
+        };
         const sy: i16 = if (y1 < y2) 1 else -1;
         var y = y1;
         var err = dx + dy;
         while (true) {
-            if (iterations == 0) break;
-            iterations -|= 1;
             try tty.goto(@abs(x), @abs(y));
             try tty.write("#");
             if (x == x2 and y == y2) break;
@@ -146,6 +149,8 @@ fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
 // TODO: arrange text on scren.
 const loveYouMomText = [_]Shape{
     letterM(0.25, 0.25, 0.25),
+    letterO(0.0, 0.0, 1.0),
+    letterL(0.0, 0.0, 1.0),
 };
 
 // TODO undo changes to terminal on close.
