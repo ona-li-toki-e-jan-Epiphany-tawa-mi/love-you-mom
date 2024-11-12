@@ -67,8 +67,8 @@ inline fn writer(file: File) Writer {
 pub const Tty = struct {
     file: File,
     writer: Writer,
-    width: usize,
-    height: usize,
+    width: u16,
+    height: u16,
     allocator: Allocator,
 
     pub fn init(file: File, allocator: Allocator) Error!Tty {
@@ -80,9 +80,7 @@ pub const Tty = struct {
             .allocator = allocator,
         };
 
-        if (!posix.isatty(file.handle)) {
-            return Error.NotATty;
-        }
+        if (!posix.isatty(file.handle)) return Error.NotATty;
         try tty.update();
 
         return tty;
@@ -107,8 +105,8 @@ pub const Tty = struct {
                 defer env.deinit();
                 const width = env.get("COLUMNS") orelse break :getEnv;
                 const height = env.get("LINES") orelse break :getEnv;
-                self.width = fmt.parseInt(usize, width, 10) catch break :getEnv;
-                self.height = fmt.parseInt(usize, height, 10) catch break :getEnv;
+                self.width = fmt.parseInt(u16, width, 10) catch break :getEnv;
+                self.height = fmt.parseInt(u16, height, 10) catch break :getEnv;
                 break :getSize;
             }
             // Else error.
@@ -126,6 +124,10 @@ pub const Tty = struct {
 
     pub inline fn home(self: *Tty) Error!void {
         try self.write("\x1B[H");
+    }
+
+    pub inline fn goto(self: *Tty, x: u16, y: u16) Error!void {
+        try self.writeFmt("\x1B[{d};{d}H", .{ y, x });
     }
 
     pub inline fn clear(self: *Tty) Error!void {
