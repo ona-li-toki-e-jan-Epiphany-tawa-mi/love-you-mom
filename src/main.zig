@@ -53,7 +53,48 @@ fn drawShutter(tty: *Tty, size: f32) !void {
 const Point = [2]f32;
 const Shape = []const Point;
 
-fn drawShape(tty: *Tty, letter: Shape) !void {
+// https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
+fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void {
+    // We handle the absolute value here ourselves, instead of with @abs, to
+    // avoid having to convert to unsigned and back to signed numbers.
+    const dx = blk: {
+        const dx = x2 - x1;
+        break :blk (if (dx < 0) -dx else dx);
+    };
+    const dy = blk: {
+        const dy = y2 - y1;
+        break :blk -(if (dy < 0) -dy else dy);
+    };
+
+    const sx: i32 = if (x1 < x2) 1 else -1;
+    const sy: i32 = if (y1 < y2) 1 else -1;
+    var err = dx + dy;
+
+    var iterations = tty.width *| tty.height; // loop limit just in case.
+    var x = x1;
+    var y = y1;
+    while (0 < iterations) {
+        if (0 <= x and x < tty.width and 0 <= y and y < tty.height) {
+            try tty.goto(@intCast(x), @intCast(y));
+            try tty.write(&.{character});
+        }
+
+        if (x == x2 and y == y2) break;
+        const e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy;
+            x += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y += sy;
+        }
+
+        iterations -|= 1;
+    }
+}
+
+fn drawShape(tty: *Tty, character: u8, letter: Shape) !void {
     debug.assert(1 < letter.len);
 
     var lastPoint: ?Point = null;
@@ -65,42 +106,12 @@ fn drawShape(tty: *Tty, letter: Shape) !void {
         }
 
         const width: f32 = @floatFromInt(tty.width);
+        const x1: i32 = @intFromFloat(point[0] * width);
+        const x2: i32 = @intFromFloat(lastPoint.?[0] * width);
         const height: f32 = @floatFromInt(tty.height);
-        const x1: i16 = @intFromFloat(point[0] * width);
-        const y1: i16 = @intFromFloat(point[1] * height);
-        const x2: i16 = @intFromFloat(lastPoint.?[0] * width);
-        const y2: i16 = @intFromFloat(lastPoint.?[1] * height);
-
-        // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
-        // We handle the absolute value manually here to avoid having to convert
-        // to unsigned and back to signed numbers.
-        const dx = blk: {
-            const dx = x2 - x1;
-            break :blk (if (dx < 0) -dx else dx);
-        };
-        const sx: i16 = if (x1 < x2) 1 else -1;
-        var x = x1;
-        const dy = blk: {
-            const dy = y2 - y1;
-            break :blk -(if (dy < 0) -dy else dy);
-        };
-        const sy: i16 = if (y1 < y2) 1 else -1;
-        var y = y1;
-        var err = dx + dy;
-        while (true) {
-            try tty.goto(@abs(x), @abs(y));
-            try tty.write("#");
-            if (x == x2 and y == y2) break;
-            const e2 = 2 * err;
-            if (e2 >= dy) {
-                err += dy;
-                x += sx;
-            }
-            if (e2 <= dx) {
-                err += dx;
-                y += sy;
-            }
-        }
+        const y1: i32 = @intFromFloat(point[1] * height);
+        const y2: i32 = @intFromFloat(lastPoint.?[1] * height);
+        try drawLine(tty, character, x1, x2, y1, y2);
 
         lastPoint = point;
     }
@@ -207,7 +218,6 @@ const loveYouMomText =
 // TODO make shutter move with respect to the change of time.
 // TODO added comand line options for saying love you dad.
 // TODO document functions.
-// TODO see how code handles lines outside of bounds.
 // TODO exit on keypress.
 pub fn main() !void {
     const allocator = heap.c_allocator;
@@ -234,7 +244,7 @@ pub fn main() !void {
 
         try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_GREEN });
         for (loveYouMomText) |letter| {
-            try drawShape(&tty, letter);
+            try drawShape(&tty, '#', letter);
         }
         if (shutterSize > 0.0) {
             try drawShutter(&tty, shutterSize);
