@@ -7,6 +7,8 @@ const debug = std.debug;
 const ttwhy = @import("ttwhy.zig");
 
 const Tty = ttwhy.Tty;
+const Foreground = ttwhy.Foreground;
+const Background = ttwhy.Background;
 
 fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
     comptime {
@@ -28,6 +30,8 @@ fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
             try tty.write(" ");
         }
     }
+
+    try tty.defaultColor();
 }
 
 const Point = [2]f32;
@@ -206,14 +210,14 @@ pub fn main() !void {
     while (true) {
         try tty.clear();
 
+        try tty.color(Foreground.GREEN, Background.BLACK);
         for (loveYouMomText) |letter| {
             try drawShape(&tty, letter);
         }
-        //try drawShutter(&tty, shutterSize, colorIndexOffset);
-        colorIndexOffset +%= 1;
-        shutterSize -= 0.025;
-        if (shutterSize < 0.0) {
-            shutterSize = 0;
+        if (shutterSize > 0.0) {
+            try drawShutter(&tty, shutterSize, colorIndexOffset);
+            colorIndexOffset +%= 11;
+            shutterSize -= 0.1;
         }
 
         try tty.update();
