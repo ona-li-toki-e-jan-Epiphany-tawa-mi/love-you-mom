@@ -146,12 +146,41 @@ fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     })[0..];
 }
 
-// TODO: arrange text on scren.
-const loveYouMomText = [_]Shape{
-    letterM(0.25, 0.25, 0.25),
-    letterO(0.0, 0.0, 1.0),
-    letterL(0.0, 0.0, 1.0),
-};
+fn line(
+    comptime x: f32,
+    comptime y: f32,
+    comptime size: f32,
+    comptime letterMargin: f32,
+    comptime text: []const u8,
+) [text.len]Shape {
+    var letters: [text.len]Shape = undefined;
+
+    const letterCount: f32 = @floatFromInt(text.len);
+    const letterSize = (size - letterMargin * (letterCount - 1)) / letterCount;
+    var xOffset = 0.0;
+
+    for (text, &letters) |character, *letter| {
+        switch (character) {
+            'e', 'E' => letter.* = letterE(x + xOffset, y, letterSize),
+            'l', 'L' => letter.* = letterL(x + xOffset, y, letterSize),
+            'm', 'M' => letter.* = letterM(x + xOffset, y, letterSize),
+            'o', 'O' => letter.* = letterO(x + xOffset, y, letterSize),
+            'u', 'U' => letter.* = letterU(x + xOffset, y, letterSize),
+            'v', 'V' => letter.* = letterV(x + xOffset, y, letterSize),
+            'y', 'Y' => letter.* = letterY(x + xOffset, y, letterSize),
+            else => unreachable,
+        }
+
+        xOffset += letterSize + letterMargin;
+    }
+
+    return letters;
+}
+
+const loveYouMomText =
+    line(0.125, 0.1, 0.75, 0.05, "love") ++
+    line(0.125, 0.4, 0.75, 0.05, "you") ++
+    line(0.125, 0.7, 0.75, 0.05, "mom");
 
 // TODO undo changes to terminal on close.
 pub fn main() !void {
