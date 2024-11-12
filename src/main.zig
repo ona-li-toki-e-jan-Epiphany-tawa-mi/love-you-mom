@@ -9,6 +9,7 @@ const ttwhy = @import("ttwhy.zig");
 const Tty = ttwhy.Tty;
 const Foreground = ttwhy.Foreground;
 const Background = ttwhy.Background;
+const Style = ttwhy.Style;
 
 fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
     comptime {
@@ -23,7 +24,7 @@ fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
     try tty.home();
     for (0..shutterHeight) |_| {
         colorIndex %= ttwhy.foregrounds.len;
-        try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex]);
+        try tty.color(ttwhy.foregrounds[colorIndex], ttwhy.backgrounds[colorIndex], Style.BOLD);
         colorIndex += 1;
 
         for (0..tty.width) |_| {
@@ -214,9 +215,10 @@ pub fn main() !void {
     var colorIndexOffset: usize = 0;
     var shutterSize: f32 = 1.0;
     while (true) {
+        try tty.defaultColor();
         try tty.clear();
 
-        try tty.color(Foreground.GREEN, Background.BLACK);
+        try tty.color(Foreground.GREEN, Background.BLACK, Style.BOLD);
         for (loveYouMomText) |letter| {
             try drawShape(&tty, letter);
         }

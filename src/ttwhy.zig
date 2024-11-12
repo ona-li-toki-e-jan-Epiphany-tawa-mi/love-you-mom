@@ -14,15 +14,6 @@ const File = fs.File;
 // Colors                                                                     //
 ////////////////////////////////////////////////////////////////////////////////
 
-fn arrayFromEnum(comptime E: type) [@typeInfo(E).Enum.fields.len]E {
-    const fields = @typeInfo(E).Enum.fields;
-    var array: [fields.len]E = undefined;
-    for (fields, &array) |field, *element| {
-        element.* = @enumFromInt(field.value);
-    }
-    return array;
-}
-
 pub const Foreground = enum(u8) {
     BLACK = 30,
     RED = 31,
@@ -32,9 +23,8 @@ pub const Foreground = enum(u8) {
     MAGENTA = 35,
     CYAN = 36,
     WHITE = 37,
+    DEFAULT = 39,
 };
-
-pub const foregrounds = arrayFromEnum(Foreground);
 
 pub const Background = enum(u8) {
     BLACK = 40,
@@ -45,9 +35,27 @@ pub const Background = enum(u8) {
     MAGENTA = 45,
     CYAN = 46,
     WHITE = 47,
+    DEFAULT = 49,
 };
 
+pub const Style = enum(u8) {
+    BOLD = 1,
+    DIM = 2,
+    DEFAULT = 22,
+};
+
+fn arrayFromEnum(comptime E: type) [@typeInfo(E).Enum.fields.len]E {
+    const fields = @typeInfo(E).Enum.fields;
+    var array: [fields.len]E = undefined;
+    for (fields, &array) |field, *element| {
+        element.* = @enumFromInt(field.value);
+    }
+    return array;
+}
+
+pub const foregrounds = arrayFromEnum(Foreground);
 pub const backgrounds = arrayFromEnum(Background);
+pub const styles = arrayFromEnum(Style);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TTY                                                                        //
@@ -134,15 +142,16 @@ pub const Tty = struct {
         try self.write("\x1B[2J");
     }
 
-    pub inline fn color(self: *Tty, foreground: Foreground, background: Background) Error!void {
-        try self.writeFmt("\x1B[{d};{d}m", .{
+    pub inline fn color(self: *Tty, foreground: Foreground, background: Background, style: Style) Error!void {
+        try self.writeFmt("\x1B[{d};{d};{d}m", .{
+            @intFromEnum(style),
             @intFromEnum(foreground),
             @intFromEnum(background),
         });
     }
 
     pub inline fn defaultColor(self: *Tty) Error!void {
-        try self.write("\x1B[39;49m");
+        try self.color(Foreground.DEFAULT, Background.DEFAULT, Style.DEFAULT);
     }
 
     pub fn cursor(self: *Tty, enable: bool) Error!void {
