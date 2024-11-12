@@ -31,8 +31,9 @@ fn drawShutter(tty: *Tty, size: f32, colorIndexOffset: usize) !void {
 }
 
 const Point = [2]f32;
+const Shape = []const Point;
 
-fn drawShape(tty: *Tty, letter: []const Point) !void {
+fn drawShape(tty: *Tty, letter: Shape) !void {
     debug.assert(1 < letter.len);
 
     var lastPoint: ?Point = null;
@@ -82,17 +83,72 @@ fn drawShape(tty: *Tty, letter: []const Point) !void {
     }
 }
 
-// TODO: make text. It's just a square right now.
-const loveYouMomText = [_][]const Point{
-    ([_]Point{
-        Point{ 0.25, 0.25 },
-        Point{ 0.75, 0.25 },
-        Point{ 0.75, 0.75 },
-        Point{ 0.25, 0.75 },
-        Point{ 0.25, 0.25 },
-    })[0..],
+fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y },
+        Point{ x + size, y },
+        Point{ x + size, y + 0.5 * size },
+        Point{ x, y + 0.5 * size },
+        Point{ x, y },
+        Point{ x, y + size },
+        Point{ x + size, y + size },
+    })[0..];
+}
+fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y },
+        Point{ x, y + size },
+        Point{ x + size, y + size },
+    })[0..];
+}
+fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y + size },
+        Point{ x, y },
+        Point{ x + 0.5 * size, y + size },
+        Point{ x + size, y },
+        Point{ x + size, y + size },
+    })[0..];
+}
+fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y + 0.5 * size },
+        Point{ x + 0.5 * size, y },
+        Point{ x + size, y + 0.5 * size },
+        Point{ x + 0.5 * size, y + size },
+        Point{ x, y + 0.5 * size },
+    })[0..];
+}
+fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y },
+        Point{ x, y + size },
+        Point{ x + size, y + size },
+        Point{ x + size, y },
+    })[0..];
+}
+fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y },
+        Point{ x + 0.5 * size, y + size },
+        Point{ x + size, y },
+    })[0..];
+}
+fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return ([_]Point{
+        Point{ x, y },
+        Point{ x + 0.5 * size, y + 0.5 * size },
+        Point{ x + size, y },
+        Point{ x, y + size },
+    })[0..];
+}
+
+// TODO: arrange text on scren.
+const loveYouMomText = [_]Shape{
+    letterM(0.25, 0.25, 0.25),
 };
 
+// TODO undo changes to terminal on close.
 pub fn main() !void {
     const allocator = heap.c_allocator;
     const stdin = io.getStdIn();
