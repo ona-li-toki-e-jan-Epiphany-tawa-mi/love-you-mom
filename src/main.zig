@@ -107,7 +107,7 @@ fn drawShape(tty: *Tty, letter: Shape) !void {
 }
 
 fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y },
         Point{ x + size, y },
         Point{ x + size, y + 0.5 * size },
@@ -115,55 +115,55 @@ fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x, y },
         Point{ x, y + size },
         Point{ x + size, y + size },
-    })[0..];
+    };
 }
 fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y },
         Point{ x, y + size },
         Point{ x + size, y + size },
-    })[0..];
+    };
 }
 fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y + size },
         Point{ x, y },
         Point{ x + 0.5 * size, y + size },
         Point{ x + size, y },
         Point{ x + size, y + size },
-    })[0..];
+    };
 }
 fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y + 0.5 * size },
         Point{ x + 0.5 * size, y },
         Point{ x + size, y + 0.5 * size },
         Point{ x + 0.5 * size, y + size },
         Point{ x, y + 0.5 * size },
-    })[0..];
+    };
 }
 fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y },
         Point{ x, y + size },
         Point{ x + size, y + size },
         Point{ x + size, y },
-    })[0..];
+    };
 }
 fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y },
         Point{ x + 0.5 * size, y + size },
         Point{ x + size, y },
-    })[0..];
+    };
 }
 fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
-    return ([_]Point{
+    return &.{
         Point{ x, y },
         Point{ x + 0.5 * size, y + 0.5 * size },
         Point{ x + size, y },
         Point{ x, y + size },
-    })[0..];
+    };
 }
 
 // TODO Add assertions to line and letter functions that x, y, and size are within bounds.
