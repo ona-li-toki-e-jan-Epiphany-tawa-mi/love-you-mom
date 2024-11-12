@@ -150,6 +150,7 @@ fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     })[0..];
 }
 
+// TODO Add assertions to line and letter functions that x, y, and size are within bounds.
 fn line(
     comptime x: f32,
     comptime y: f32,
@@ -187,6 +188,11 @@ const loveYouMomText =
     line(0.125, 0.7, 0.75, 0.05, "mom");
 
 // TODO undo changes to terminal on close.
+// TODO make shutter move with respect to the change of time.
+// TODO added comand line options for saying love you dad.
+// TODO document functions.
+// TODO see how code handles lines outside of bounds.
+// TODO exit on keypress.
 pub fn main() !void {
     const allocator = heap.c_allocator;
     const stdin = io.getStdIn();
