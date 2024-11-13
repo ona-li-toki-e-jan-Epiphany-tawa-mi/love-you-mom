@@ -12,12 +12,11 @@ const Tty = ttwhy.Tty;
 const Timer = time.Timer;
 const ArgIterator = process.ArgIterator;
 const File = fs.File;
-
 const FileWriter = io.BufferedWriter(4096, File.Writer);
+const Shape = graphics.Shape;
 
 fn help(stdout: *FileWriter, parsedArgs: ParsedArgs) !void {
     const writer = stdout.writer();
-
     try writer.print(
         \\Usages:
         \\  {s} [OPTIONS...]
@@ -33,7 +32,6 @@ fn help(stdout: *FileWriter, parsedArgs: ParsedArgs) !void {
         \\  -d, --love-you-dad    Tell your dad that you love him.
         \\
     , .{parsedArgs.programName});
-
     try stdout.flush();
 }
 
@@ -43,21 +41,29 @@ fn version(stdout: *FileWriter) !void {
     try stdout.flush();
 }
 
-// TODO Implement love you dad option.
+const loveYouText =
+    graphics.line(0.125, 0.1, 0.75, 0.05, "love") ++
+    graphics.line(0.125, 0.4, 0.75, 0.05, "you");
+const loveYouMomText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom");
+const loveYouDadText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
+
 // TODO document functions.
 pub fn main() !void {
     var stdout: FileWriter = .{ .unbuffered_writer = io.getStdOut().writer() };
+    var text = loveYouMomText;
 
     var args = process.args();
     const parsedArgs = try parseArgs(&args);
     if (parsedArgs.displayHelp) {
         try help(&stdout, parsedArgs);
         return;
-    } else if (parsedArgs.displayVersion) {
+    }
+    if (parsedArgs.displayVersion) {
         try version(&stdout);
         return;
-    } else if (parsedArgs.loveYouDad) {
-        return error.NotImplemented;
+    }
+    if (parsedArgs.loveYouDad) {
+        text = loveYouDadText;
     }
 
     const ttyFile = fs.cwd().openFile("/dev/tty", .{ .mode = .read_write }) catch |err| {
@@ -81,8 +87,38 @@ pub fn main() !void {
     try tty.uncook();
     defer tty.cook() catch {};
 
-    try run(&tty);
+    try run(&tty, &text);
 }
+
+fn run(tty: *Tty, text: []const Shape) !void {
+    const nanosecondsPerSecond = comptime 1_000_000_000;
+    const fps = comptime 15;
+    const nanosecondsPerFrame: u64 = comptime nanosecondsPerSecond / fps;
+
+    try tty.cursor(false);
+    defer tty.cursor(true) catch {};
+
+    var timer = try Timer.start();
+    while (true) {
+        const deltaTime_ns = timer.lap();
+        if (nanosecondsPerFrame > deltaTime_ns) {
+            time.sleep(nanosecondsPerFrame - deltaTime_ns);
+        }
+
+        const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
+        try graphics.draw(tty, deltaTime_s, text);
+        try tty.update();
+
+        // Exits if any key is pressed.
+        var buffer: [1]u8 = undefined;
+        const bytesRead = try tty.read(&buffer);
+        if (0 != bytesRead) break;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Arugment Parsing                                                           //
+////////////////////////////////////////////////////////////////////////////////
 
 const ParsedArgs = struct {
     programName: []const u8 = undefined,
@@ -90,27 +126,6 @@ const ParsedArgs = struct {
     displayVersion: bool = false,
     loveYouDad: bool = false,
 };
-
-fn parseShortOption(parsedArgs: *ParsedArgs, option: u8) !bool {
-    switch (option) {
-        'h' => {
-            parsedArgs.displayHelp = true;
-            return true;
-        },
-        'v' => {
-            parsedArgs.displayVersion = true;
-            return true;
-        },
-        'd' => parsedArgs.loveYouDad = true,
-
-        else => {
-            log.err("Unknown command line option '-{c}'", .{option});
-            return error.UnknownOption;
-        },
-    }
-
-    return false;
-}
 
 fn parseArgs(args: *ArgIterator) !ParsedArgs {
     var parsedArgs: ParsedArgs = .{};
@@ -145,28 +160,23 @@ fn parseArgs(args: *ArgIterator) !ParsedArgs {
     return parsedArgs;
 }
 
-fn run(tty: *Tty) !void {
-    const nanosecondsPerSecond = comptime 1_000_000_000;
-    const fps = comptime 15;
-    const nanosecondsPerFrame: u64 = comptime nanosecondsPerSecond / fps;
+fn parseShortOption(parsedArgs: *ParsedArgs, option: u8) !bool {
+    switch (option) {
+        'h' => {
+            parsedArgs.displayHelp = true;
+            return true;
+        },
+        'v' => {
+            parsedArgs.displayVersion = true;
+            return true;
+        },
+        'd' => parsedArgs.loveYouDad = true,
 
-    try tty.cursor(false);
-    defer tty.cursor(true) catch {};
-
-    var timer = try Timer.start();
-    while (true) {
-        const deltaTime_ns = timer.lap();
-        if (nanosecondsPerFrame > deltaTime_ns) {
-            time.sleep(nanosecondsPerFrame - deltaTime_ns);
-        }
-
-        const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
-        try graphics.draw(tty, deltaTime_s);
-        try tty.update();
-
-        // Exits if any key is pressed.
-        var buffer: [1]u8 = undefined;
-        const bytesRead = try tty.read(&buffer);
-        if (0 != bytesRead) break;
+        else => {
+            log.err("Unknown command line option '-{c}'", .{option});
+            return error.UnknownOption;
+        },
     }
+
+    return false;
 }

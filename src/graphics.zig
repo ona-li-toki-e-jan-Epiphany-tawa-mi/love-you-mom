@@ -9,12 +9,7 @@ const GraphicMode = ttwhy.GraphicMode;
 // Drawing                                                                    //
 ////////////////////////////////////////////////////////////////////////////////
 
-const loveYouMomText =
-    line(0.125, 0.1, 0.75, 0.05, "love") ++
-    line(0.125, 0.4, 0.75, 0.05, "you") ++
-    line(0.125, 0.7, 0.75, 0.05, "mom");
-
-pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
+pub fn draw(tty: *Tty, deltaTime_s: f64, text: []const Shape) !void {
     const statics = struct {
         var scene: u8 = 0;
     };
@@ -32,7 +27,7 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
             };
 
             try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
-            for (loveYouMomText) |letter| {
+            for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
 
@@ -63,7 +58,7 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
             } else {
                 try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_GREEN });
             }
-            for (loveYouMomText) |letter| {
+            for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
 
@@ -79,7 +74,7 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
             try tty.clear();
 
             try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_CYAN });
-            for (loveYouMomText) |letter| {
+            for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
         },
@@ -188,11 +183,11 @@ fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void 
 // Shapes                                                                     //
 ////////////////////////////////////////////////////////////////////////////////
 
-const Point = [2]f32;
-const Shape = []const Point;
+pub const Point = [2]f32;
+pub const Shape = []const Point;
 
 // TODO Add assertions to line and letter functions that x, y, and size are within bounds.
-fn line(
+pub fn line(
     comptime x: f32,
     comptime y: f32,
     comptime size: f32,
@@ -207,6 +202,8 @@ fn line(
 
     for (text, &letters) |character, *letter| {
         switch (character) {
+            'a', 'A' => letter.* = letterA(x + xOffset, y, letterSize),
+            'd', 'D' => letter.* = letterD(x + xOffset, y, letterSize),
             'e', 'E' => letter.* = letterE(x + xOffset, y, letterSize),
             'l', 'L' => letter.* = letterL(x + xOffset, y, letterSize),
             'm', 'M' => letter.* = letterM(x + xOffset, y, letterSize),
@@ -214,7 +211,7 @@ fn line(
             'u', 'U' => letter.* = letterU(x + xOffset, y, letterSize),
             'v', 'V' => letter.* = letterV(x + xOffset, y, letterSize),
             'y', 'Y' => letter.* = letterY(x + xOffset, y, letterSize),
-            else => unreachable,
+            else => @compileError("Unhandled character: " ++ [1]u8{character}),
         }
 
         xOffset += letterSize + letterMargin;
@@ -223,6 +220,23 @@ fn line(
     return letters;
 }
 
+fn letterA(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return &.{
+        Point{ x, y + size },
+        Point{ x + 0.5 * size, y },
+        Point{ x + size, y + size },
+        Point{ x + 0.75 * size, y + 0.825 * size },
+        Point{ x + 0.25 * size, y + 0.825 * size },
+    };
+}
+fn letterD(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    return &.{
+        Point{ x, y },
+        Point{ x, y + size },
+        Point{ x + size, y + 0.5 * size },
+        Point{ x, y },
+    };
+}
 fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     return &.{
         Point{ x, y },
