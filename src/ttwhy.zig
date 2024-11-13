@@ -12,6 +12,7 @@ const Allocator = mem.Allocator;
 const File = fs.File;
 const termios = posix.termios;
 const TCSA = posix.TCSA;
+const V = posix.V;
 
 pub const GraphicMode = enum(u8) {
     RESET_ALL = 0,
@@ -57,6 +58,7 @@ pub const Error = error{
     NotATty,
     WriteFail,
     TermiosFail,
+    ReadFail,
 };
 
 const Writer = io.BufferedWriter(4096, File.Writer);
@@ -97,14 +99,18 @@ pub const Tty = struct {
         newTermios.iflag.IXON = false; // Disables external C-s and C-q handling.
         newTermios.iflag.ICRNL = false; // Disables external C-j and C-m handling.
         newTermios.oflag.OPOST = false; // Disables output processing.
-        posix.tcsetattr(self.file.handle, TCSA.FLUSH, newTermios) catch
+        // Makes reads not timeout. TODO make configurable.
+        newTermios.cc[@intFromEnum(V.TIME)] = 0;
+        newTermios.cc[@intFromEnum(V.MIN)] = 0;
+
+        posix.tcsetattr(self.file.handle, .FLUSH, newTermios) catch
             return Error.TermiosFail;
     }
 
     pub fn cook(self: *Tty) Error!void {
         debug.assert(null != self.originalTermios);
 
-        posix.tcsetattr(self.file.handle, TCSA.FLUSH, self.originalTermios.?) catch
+        posix.tcsetattr(self.file.handle, .FLUSH, self.originalTermios.?) catch
             return Error.TermiosFail;
 
         self.originalTermios = null;
@@ -168,6 +174,10 @@ pub const Tty = struct {
 
     pub inline fn writeFmt(self: *Tty, comptime format: []const u8, args: anytype) Error!void {
         self.writer.writer().print(format, args) catch return Error.WriteFail;
+    }
+
+    pub inline fn read(self: *Tty, buffer: []u8) Error!usize {
+        return self.file.read(buffer) catch return Error.ReadFail;
     }
 
     pub inline fn home(self: *Tty) Error!void {

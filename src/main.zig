@@ -30,13 +30,16 @@ fn run(tty: *Tty) !void {
             else => |leftover_err| return leftover_err,
         };
         try tty.update();
+
+        // Exits if any key is pressed.
+        var buffer: [1]u8 = undefined;
+        const bytesRead = try tty.read(&buffer);
+        if (0 != bytesRead) break;
     }
 }
 
 // TODO added comand line options for saying love you dad.
 // TODO document functions.
-// TODO exit on keypress.
-// TODO hide typed characters.
 pub fn main() !void {
     const ttyFile = fs.cwd().openFile("/dev/tty", .{ .mode = .read_write }) catch |err| {
         log.err("Unable to open /dev/tty. You need to run this program in a terminal", .{});
