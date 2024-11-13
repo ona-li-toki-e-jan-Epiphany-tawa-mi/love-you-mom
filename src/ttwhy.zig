@@ -10,6 +10,8 @@ const debug = std.debug;
 
 const Allocator = mem.Allocator;
 const File = fs.File;
+const termios = posix.termios;
+const TCSA = posix.TCSA;
 
 pub const GraphicMode = enum(u8) {
     RESET_ALL = 0,
@@ -54,6 +56,7 @@ pub const GraphicMode = enum(u8) {
 pub const Error = error{
     NotATty,
     WriteFail,
+    TermiosFail,
 };
 
 const Writer = io.BufferedWriter(4096, File.Writer);
@@ -62,12 +65,14 @@ inline fn writer(file: File) Writer {
 }
 
 pub const Tty = struct {
-    file: File,
-    writer: Writer,
-
-    dynamicSize: bool = true,
     width: u16 = undefined,
     height: u16 = undefined,
+
+    file: File,
+    writer: Writer,
+    dynamicSize: bool = true,
+    saved: bool = false,
+    originalTermios: ?termios = null,
 
     pub fn init(file: File) Error!Tty {
         if (!posix.isatty(file.handle)) return Error.NotATty;
@@ -78,21 +83,53 @@ pub const Tty = struct {
         };
     }
 
-    pub fn save(self: *Tty) !void {
+    pub fn uncook(self: *Tty) Error!void {
+        debug.assert(null == self.originalTermios);
+        self.originalTermios = posix.tcgetattr(self.file.handle) catch
+            return Error.TermiosFail;
+
+        // https://zig.news/lhp/want-to-create-a-tui-application-the-basics-of-uncooked-terminal-io-17gm
+        var newTermios = self.originalTermios.?;
+        newTermios.lflag.ECHO = false; // Do not display user typed keys.
+        newTermios.lflag.ICANON = false; // Disables canonical mode.
+        newTermios.lflag.ISIG = false; // Disables external C-c and C-z handling.
+        newTermios.lflag.IEXTEN = false; // Disables external C-v handling.
+        newTermios.iflag.IXON = false; // Disables external C-s and C-q handling.
+        newTermios.iflag.ICRNL = false; // Disables external C-j and C-m handling.
+        newTermios.oflag.OPOST = false; // Disables output processing.
+        posix.tcsetattr(self.file.handle, TCSA.FLUSH, newTermios) catch
+            return Error.TermiosFail;
+    }
+
+    pub fn cook(self: *Tty) Error!void {
+        debug.assert(null != self.originalTermios);
+
+        posix.tcsetattr(self.file.handle, TCSA.FLUSH, self.originalTermios.?) catch
+            return Error.TermiosFail;
+
+        self.originalTermios = null;
+    }
+
+    pub fn save(self: *Tty) Error!void {
+        debug.assert(!self.saved);
+
         // \x1B[s      - Save cursor position.
         // \x1B[?47h   - Save screen.
         // \x1B[?1049h - Enable alternative buffer.
         try self.write("\x1B[s\x1B[?47h\x1B[?1049h");
         try self.update();
+        self.saved = true;
     }
 
-    pub fn restore(self: *Tty) !void {
-        // Restores original terminal state.
+    pub fn restore(self: *Tty) Error!void {
+        debug.assert(self.saved);
+
         // \x1B[?1049l - Disable alternative buffer.
         // \x1B[?47l   - Restore screen.
         // \x1B[u      - Restore cursor position.
         try self.write("\x1B[?1049l\x1B[?47l\x1B[u");
         try self.update();
+        self.saved = false;
     }
 
     pub fn update(self: *Tty) Error!void {

@@ -56,6 +56,8 @@ pub fn main() !void {
     };
     try tty.save();
     defer tty.restore() catch {};
+    try tty.uncook();
+    defer tty.cook() catch {};
 
     try run(&tty);
 }
