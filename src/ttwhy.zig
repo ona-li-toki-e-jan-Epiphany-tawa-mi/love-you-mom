@@ -61,7 +61,7 @@ pub const Error = error{
     ReadFail,
 };
 
-const Writer = io.BufferedWriter(4096, File.Writer);
+pub const Writer = io.BufferedWriter(4096, File.Writer);
 inline fn writer(file: File) Writer {
     return .{ .unbuffered_writer = file.writer() };
 }
