@@ -9,6 +9,9 @@ const ttwhy = @import("ttwhy.zig");
 const Tty = ttwhy.Tty;
 const GraphicMode = ttwhy.GraphicMode;
 
+const Timer = time.Timer;
+const nanosecondsPerSecond = 1_000_000_000;
+
 fn drawShutter(tty: *Tty, size: f32) !void {
     debug.assert(0.0 <= size and 1.0 >= size);
     const shutterHeight: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
@@ -214,17 +217,41 @@ const loveYouMomText =
     line(0.125, 0.4, 0.75, 0.05, "you") ++
     line(0.125, 0.7, 0.75, 0.05, "mom");
 
+fn draw(tty: *Tty, deltaTime_s: f64) !void {
+    const static = struct {
+        var shutterSize: f32 = 1.0;
+    };
+
+    try tty.resetGraphicModes();
+    try tty.clear();
+
+    try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_GREEN });
+    for (loveYouMomText) |letter| {
+        try drawShape(tty, '#', letter);
+    }
+
+    if (static.shutterSize > 0.0) {
+        try drawShutter(tty, static.shutterSize);
+        const shutterSpeed = 0.1;
+        static.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
+    }
+}
+
 // TODO undo changes to terminal on close.
-// TODO make shutter move with respect to the change of time.
 // TODO added comand line options for saying love you dad.
 // TODO document functions.
 // TODO exit on keypress.
 pub fn main() !void {
-    const stdin = io.getStdIn();
+    const fps = 15;
+    const nanosecondsPerFrame: u64 = comptime nanosecondsPerSecond / fps;
 
+    const stdin = io.getStdIn();
     var tty = Tty.init(stdin) catch |err| switch (err) {
         ttwhy.Error.NotATty => {
-            log.err("stdin is not a tty! You need to use this program with a terminal emulator", .{});
+            log.err(
+                "stdin is not a tty! You need to use this program with a terminal emulator",
+                .{},
+            );
             return err;
         },
         else => |leftover_err| return leftover_err,
@@ -232,21 +259,15 @@ pub fn main() !void {
 
     try tty.cursor(false);
 
-    var shutterSize: f32 = 1.0;
+    var timer = try Timer.start();
     while (true) {
-        try tty.resetGraphicModes();
-        try tty.clear();
-
-        try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_GREEN });
-        for (loveYouMomText) |letter| {
-            try drawShape(&tty, '#', letter);
-        }
-        if (shutterSize > 0.0) {
-            try drawShutter(&tty, shutterSize);
-            shutterSize -= 0.1;
+        const deltaTime_ns = timer.lap();
+        if (nanosecondsPerFrame > deltaTime_ns) {
+            time.sleep(nanosecondsPerFrame - deltaTime_ns);
         }
 
+        const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
+        try draw(&tty, deltaTime_s);
         try tty.update();
-        time.sleep(500_000_000);
     }
 }
