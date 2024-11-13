@@ -228,7 +228,7 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
         var textToggleTime_s: f64 = 0.0;
         var textToggleCycles: u8 = 3;
         // Scene 2.
-        var textToggleTime: f64 = 0.0;
+        var scene2Time_s: f64 = 3.0;
     };
 
     try tty.resetGraphicModes();
@@ -279,6 +279,21 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
 
         else => unreachable,
     }
+        // Text changes to a static red and cyan.
+        2 => {
+            try tty.setGraphicModes(&.{GraphicMode.BACKGROUND_RED});
+            try tty.clear();
+
+            try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_CYAN });
+            for (loveYouMomText) |letter| {
+                try drawShape(tty, '#', letter);
+            }
+
+            static.scene2Time_s -= deltaTime_s;
+            if (0.0 >= static.scene2Time_s) {
+                static.scene +|= 1;
+            }
+        },
 }
 
 // TODO undo changes to terminal on close.
