@@ -1,3 +1,5 @@
+//! Tells your mom (or dad) you love them.
+
 const std = @import("std");
 const log = std.log;
 const io = std.io;
@@ -47,7 +49,6 @@ const love_you_text =
 const love_you_mom_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom");
 const love_you_dad_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
 
-// TODO document functions.
 // TODO add license.
 pub fn main() !void {
     var stdout = BufferedFileWriter{ .unbuffered_writer = io.getStdOut().writer() };
@@ -91,6 +92,9 @@ pub fn main() !void {
     try run(&tty, &text);
 }
 
+/// Drives the animation.
+/// Handles the timing for and calls to fn graphics.draw.
+/// text - the text to display throughout the animation.
 fn run(tty: *Tty, text: []const Shape) !void {
     const nanoseconds_per_second = comptime 1_000_000_000;
     const fps = comptime 15;
@@ -124,8 +128,11 @@ fn run(tty: *Tty, text: []const Shape) !void {
 
 const ParsedArgs = struct {
     program_name: []const u8 = undefined,
+    /// Whether to display help text and exit.
     display_help: bool = false,
+    /// Whether to display version text and exit.
     display_version: bool = false,
+    /// Whether to display "love you dad" instead of "love you mom."
     love_you_dad: bool = false,
 };
 

@@ -1,3 +1,5 @@
+//! Handles generating and displaying graphics to the terminal.
+
 const std = @import("std");
 const debug = std.debug;
 const ttwhy = @import("ttwhy.zig");
@@ -9,6 +11,9 @@ const GraphicMode = ttwhy.GraphicMode;
 // Drawing                                                                    //
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Draws the animation.
+/// delta_time_s - the amount of time that has passed since fn draw was last
+/// called.
 pub fn draw(tty: *Tty, delta_time_s: f64, text: []const Shape) !void {
     const Statics = struct {
         var scene: u8 = 0;
@@ -84,6 +89,8 @@ pub fn draw(tty: *Tty, delta_time_s: f64, text: []const Shape) !void {
     }
 }
 
+/// Draws the shutter for scene 0.
+/// size - how open the shutter is. Domain: [0.0,1.0].
 fn drawShutter(tty: *Tty, size: f32) !void {
     debug.assert(0.0 <= size and 1.0 >= size);
     const shutter_height: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
@@ -116,12 +123,15 @@ fn drawShutter(tty: *Tty, size: f32) !void {
     }
 }
 
-fn drawShape(tty: *Tty, character: u8, letter: Shape) !void {
-    debug.assert(1 < letter.len);
+/// Draws lines between the points of a shap, starting from the first point and
+/// ending with the last one.
+/// character - the character to use to draw the lines.
+fn drawShape(tty: *Tty, character: u8, shape: Shape) !void {
+    debug.assert(1 < shape.len);
 
     var last_point: ?Point = null;
 
-    for (letter) |point| {
+    for (shape) |point| {
         if (null == last_point) {
             last_point = point;
             continue;
@@ -139,7 +149,11 @@ fn drawShape(tty: *Tty, character: u8, letter: Shape) !void {
     }
 }
 
-// https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
+/// Draws a line between two points (x1,y1), (x2,y2).
+/// character - the character to use to draw the line.
+/// Algorithm used:
+///   https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm#All_cases
+///   Scroll to last algorithm in this^ section.
 fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void {
     // We handle the absolute value here ourselves, instead of with @abs, to
     // avoid having to convert to unsigned and back to signed numbers.
@@ -184,9 +198,16 @@ fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void 
 // Shapes                                                                     //
 ////////////////////////////////////////////////////////////////////////////////
 
+/// A point in 2D space. The functions that use this type work with a
+/// left-handed coodinate system, so positive y values mean down.
 pub const Point = [2]f32;
+/// A series of struct Point, the lines drawn between representing a shape.
 pub const Shape = []const Point;
 
+/// Converts a string into an array of shapes that represents a drawable form of
+/// that string, similar to vector graphics.
+/// size - domain: (0.0,infinity).
+/// letter_margin - the space between each letter. Domain: (0.0,infinity).
 pub fn line(
     comptime x: f32,
     comptime y: f32,
@@ -224,6 +245,8 @@ pub fn line(
     return letters;
 }
 
+// The Following functions generate shapes representing letters.
+/// size - domain: (0.0,infinity).
 fn letterA(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -234,6 +257,7 @@ fn letterA(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + 0.25 * size, y + 0.825 * size },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterD(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -243,6 +267,7 @@ fn letterD(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x, y },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -255,6 +280,7 @@ fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + size, y + size },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -263,6 +289,7 @@ fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + size, y + size },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -273,6 +300,7 @@ fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + size, y + size },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -283,6 +311,7 @@ fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x, y + 0.5 * size },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -292,6 +321,7 @@ fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + size, y },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
@@ -300,6 +330,7 @@ fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
         Point{ x + size, y },
     };
 }
+/// size - domain: (0.0,infinity).
 fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     debug.assert(0.0 < size);
     return &.{
