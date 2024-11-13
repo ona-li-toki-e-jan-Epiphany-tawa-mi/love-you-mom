@@ -222,8 +222,11 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
 
     const static = struct {
         var scene: u8 = 0;
-        // Scene 1.
+        // Scene 0.
         var shutterSize: f32 = 1.0;
+        // Scene 1.
+        var textToggleTime_s: f64 = 0.0;
+        var textToggleCycles: u8 = 3;
         // Scene 2.
         var textToggleTime: f64 = 0.0;
     };
@@ -232,6 +235,7 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
     try tty.clear();
 
     switch (static.scene) {
+        // Shutter opening up to show text.
         0 => {
             try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
             for (loveYouMomText) |letter| {
@@ -248,12 +252,14 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
             }
         },
 
+        // Text blinks between green and bright green.
         1 => {
-            if (1.0 < static.textToggleTime) {
+            if (1.0 < static.textToggleTime_s) {
                 try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
 
-                if (2.0 < static.textToggleTime) {
-                    static.textToggleTime = 0.0;
+                if (2.0 < static.textToggleTime_s) {
+                    static.textToggleTime_s = 0.0;
+                    static.textToggleCycles -|= 1;
                 }
             } else {
                 try tty.setGraphicModes(&.{
@@ -265,7 +271,10 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
                 try drawShape(tty, '#', letter);
             }
 
-            static.textToggleTime += deltaTime_s;
+            static.textToggleTime_s += deltaTime_s;
+            if (0 == static.textToggleCycles) {
+                static.scene +|= 1;
+            }
         },
 
         else => unreachable,
