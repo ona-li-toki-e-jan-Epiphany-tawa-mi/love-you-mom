@@ -12,10 +12,10 @@ const Tty = ttwhy.Tty;
 const Timer = time.Timer;
 const ArgIterator = process.ArgIterator;
 const File = fs.File;
-const FileWriter = io.BufferedWriter(4096, File.Writer);
+const BufferedFileWriter = io.BufferedWriter(4096, File.Writer);
 const Shape = graphics.Shape;
 
-fn help(stdout: *FileWriter, parsedArgs: ParsedArgs) !void {
+fn help(stdout: *BufferedFileWriter, parsed_args: ParsedArgs) !void {
     const writer = stdout.writer();
     try writer.print(
         \\Usages:
@@ -31,49 +31,49 @@ fn help(stdout: *FileWriter, parsedArgs: ParsedArgs) !void {
         \\  -v, --version         Displays version information and exits.
         \\  -d, --love-you-dad    Tell your dad that you love him.
         \\
-    , .{parsedArgs.programName});
+    , .{parsed_args.program_name});
     try stdout.flush();
 }
 
-fn version(stdout: *FileWriter) !void {
+fn version(stdout: *BufferedFileWriter) !void {
     const writer = stdout.writer();
     try writer.print("love-you-mom 0.1.0\n", .{});
     try stdout.flush();
 }
 
-const loveYouText =
+const love_you_text =
     graphics.line(0.125, 0.1, 0.75, 0.05, "love") ++
     graphics.line(0.125, 0.4, 0.75, 0.05, "you");
-const loveYouMomText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom");
-const loveYouDadText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
+const love_you_mom_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom");
+const love_you_dad_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
 
 // TODO document functions.
 // TODO add license.
 pub fn main() !void {
-    var stdout: FileWriter = .{ .unbuffered_writer = io.getStdOut().writer() };
-    var text = loveYouMomText;
+    var stdout = BufferedFileWriter{ .unbuffered_writer = io.getStdOut().writer() };
+    var text = love_you_mom_text;
 
     var args = process.args();
-    const parsedArgs = try parseArgs(&args);
-    if (parsedArgs.displayHelp) {
-        try help(&stdout, parsedArgs);
+    const parsed_args = try parseArgs(&args);
+    if (parsed_args.display_help) {
+        try help(&stdout, parsed_args);
         return;
     }
-    if (parsedArgs.displayVersion) {
+    if (parsed_args.display_version) {
         try version(&stdout);
         return;
     }
-    if (parsedArgs.loveYouDad) {
-        text = loveYouDadText;
+    if (parsed_args.love_you_dad) {
+        text = love_you_dad_text;
     }
 
-    const ttyFile = fs.cwd().openFile("/dev/tty", .{ .mode = .read_write }) catch |err| {
+    const tty_file = fs.cwd().openFile("/dev/tty", .{ .mode = .read_write }) catch |err| {
         log.err("Unable to open /dev/tty. You need to run this program in a terminal", .{});
         return err;
     };
-    defer ttyFile.close();
+    defer tty_file.close();
 
-    var tty = Tty.init(ttyFile) catch |err| switch (err) {
+    var tty = Tty.init(tty_file) catch |err| switch (err) {
         error.NotATty => {
             log.err(
                 "/dev/tty is not a tty! The sky is falling, Chicken Little!",
@@ -92,28 +92,29 @@ pub fn main() !void {
 }
 
 fn run(tty: *Tty, text: []const Shape) !void {
-    const nanosecondsPerSecond = comptime 1_000_000_000;
+    const nanoseconds_per_second = comptime 1_000_000_000;
     const fps = comptime 15;
-    const nanosecondsPerFrame: u64 = comptime nanosecondsPerSecond / fps;
+    const nanoseconds_per_frame: u64 = comptime nanoseconds_per_second / fps;
 
     try tty.cursor(false);
     defer tty.cursor(true) catch {};
 
     var timer = try Timer.start();
     while (true) {
-        const deltaTime_ns = timer.lap();
-        if (nanosecondsPerFrame > deltaTime_ns) {
-            time.sleep(nanosecondsPerFrame - deltaTime_ns);
+        const delta_time_ns = timer.lap();
+        if (nanoseconds_per_frame > delta_time_ns) {
+            time.sleep(nanoseconds_per_frame - delta_time_ns);
         }
 
-        const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
-        try graphics.draw(tty, deltaTime_s, text);
+        const delta_time_s =
+            @as(f64, @floatFromInt(delta_time_ns)) / nanoseconds_per_second;
+        try graphics.draw(tty, delta_time_s, text);
         try tty.update();
 
         // Exits if any key is pressed.
         var buffer: [1]u8 = undefined;
-        const bytesRead = try tty.read(&buffer);
-        if (0 != bytesRead) break;
+        const bytes_read = try tty.read(&buffer);
+        if (0 != bytes_read) break;
     }
 }
 
@@ -122,16 +123,16 @@ fn run(tty: *Tty, text: []const Shape) !void {
 ////////////////////////////////////////////////////////////////////////////////
 
 const ParsedArgs = struct {
-    programName: []const u8 = undefined,
-    displayHelp: bool = false,
-    displayVersion: bool = false,
-    loveYouDad: bool = false,
+    program_name: []const u8 = undefined,
+    display_help: bool = false,
+    display_version: bool = false,
+    love_you_dad: bool = false,
 };
 
 fn parseArgs(args: *ArgIterator) !ParsedArgs {
-    var parsedArgs: ParsedArgs = .{};
+    var parsed_args: ParsedArgs = .{};
 
-    parsedArgs.programName = args.next().?;
+    parsed_args.program_name = args.next().?;
 
     while (args.next()) |arg| parsingLoop: {
         if (2 <= arg.len and '-' == arg[0] and '-' != arg[1]) {
@@ -141,37 +142,37 @@ fn parseArgs(args: *ArgIterator) !ParsedArgs {
                     first = false;
                     continue;
                 }
-                const shouldEndParsing = try parseShortOption(&parsedArgs, shortOption);
-                if (shouldEndParsing) break :parsingLoop;
+                const should_end_parsing = try parseShortOption(&parsed_args, shortOption);
+                if (should_end_parsing) break :parsingLoop;
             }
         } else if (mem.eql(u8, "--help", arg)) {
-            parsedArgs.displayHelp = true;
+            parsed_args.display_help = true;
             break :parsingLoop;
         } else if (mem.eql(u8, "--version", arg)) {
-            parsedArgs.displayVersion = true;
+            parsed_args.display_version = true;
             break :parsingLoop;
         } else if (mem.eql(u8, "--love-you-dad", arg)) {
-            parsedArgs.loveYouDad = true;
+            parsed_args.love_you_dad = true;
         } else {
             log.err("Unknown command line option '{s}'", .{arg});
             return error.UnknownOption;
         }
     }
 
-    return parsedArgs;
+    return parsed_args;
 }
 
-fn parseShortOption(parsedArgs: *ParsedArgs, option: u8) !bool {
+fn parseShortOption(parsed_args: *ParsedArgs, option: u8) !bool {
     switch (option) {
         'h' => {
-            parsedArgs.displayHelp = true;
+            parsed_args.display_help = true;
             return true;
         },
         'v' => {
-            parsedArgs.displayVersion = true;
+            parsed_args.display_version = true;
             return true;
         },
-        'd' => parsedArgs.loveYouDad = true,
+        'd' => parsed_args.love_you_dad = true,
 
         else => {
             log.err("Unknown command line option '-{c}'", .{option});

@@ -9,71 +9,72 @@ const GraphicMode = ttwhy.GraphicMode;
 // Drawing                                                                    //
 ////////////////////////////////////////////////////////////////////////////////
 
-pub fn draw(tty: *Tty, deltaTime_s: f64, text: []const Shape) !void {
-    const statics = struct {
+pub fn draw(tty: *Tty, delta_time_s: f64, text: []const Shape) !void {
+    const Statics = struct {
         var scene: u8 = 0;
     };
 
-    debug.assert(deltaTime_s > 0.0);
+    debug.assert(delta_time_s > 0.0);
 
     try tty.resetGraphicModes();
     try tty.clear();
 
-    switch (statics.scene) {
+    switch (Statics.scene) {
         // Shutter opening up to show text.
         0 => {
-            const sceneStatics = struct {
-                var shutterSize: f32 = 1.0;
+            const SceneStatics = struct {
+                var shutter_size: f32 = 1.0;
             };
 
-            try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
+            try tty.setGraphicModes(&.{.foreground_green});
             for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
 
-            if (sceneStatics.shutterSize > 0.0) {
+            if (SceneStatics.shutter_size > 0.0) {
                 try tty.resetGraphicModes();
-                try drawShutter(tty, sceneStatics.shutterSize);
-                const shutterSpeed = comptime 0.2;
-                sceneStatics.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
+                try drawShutter(tty, SceneStatics.shutter_size);
+                const shutter_speed = comptime 0.2;
+                SceneStatics.shutter_size -=
+                    shutter_speed * @as(f32, @floatCast(delta_time_s));
             } else {
-                statics.scene +|= 1;
+                Statics.scene +|= 1;
             }
         },
 
         // Text blinks between green and bright green.
         1 => {
-            const sceneStatics = struct {
-                var toggleTime_s: f64 = 0.0;
-                var toggleCycles: u8 = 3;
+            const SceneStatics = struct {
+                var toggle_time_s: f64 = 0.0;
+                var toggle_cycles: u8 = 3;
             };
 
-            if (1.0 < sceneStatics.toggleTime_s) {
-                try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
+            if (1.0 < SceneStatics.toggle_time_s) {
+                try tty.setGraphicModes(&.{.foreground_green});
 
-                if (2.0 < sceneStatics.toggleTime_s) {
-                    sceneStatics.toggleTime_s = 0.0;
-                    sceneStatics.toggleCycles -|= 1;
+                if (2.0 < SceneStatics.toggle_time_s) {
+                    SceneStatics.toggle_time_s = 0.0;
+                    SceneStatics.toggle_cycles -|= 1;
                 }
             } else {
-                try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_GREEN });
+                try tty.setGraphicModes(&.{ .bold, .foreground_green });
             }
             for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
 
-            sceneStatics.toggleTime_s += deltaTime_s;
-            if (0 == sceneStatics.toggleCycles) {
-                statics.scene +|= 1;
+            SceneStatics.toggle_time_s += delta_time_s;
+            if (0 == SceneStatics.toggle_cycles) {
+                Statics.scene +|= 1;
             }
         },
 
         // Text changes to a static red and cyan.
         2 => {
-            try tty.setGraphicModes(&.{.BACKGROUND_RED});
+            try tty.setGraphicModes(&.{.background_red});
             try tty.clear();
 
-            try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_CYAN });
+            try tty.setGraphicModes(&.{ .bold, .foreground_cyan });
             for (text) |letter| {
                 try drawShape(tty, '#', letter);
             }
@@ -85,23 +86,23 @@ pub fn draw(tty: *Tty, deltaTime_s: f64, text: []const Shape) !void {
 
 fn drawShutter(tty: *Tty, size: f32) !void {
     debug.assert(0.0 <= size and 1.0 >= size);
-    const shutterHeight: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
-    if (0 == shutterHeight) return;
+    const shutter_height: u16 = @intFromFloat(size * @as(f32, @floatFromInt(tty.height)));
+    if (0 == shutter_height) return;
 
     try tty.home();
     try tty.resetGraphicModes();
 
-    var y = shutterHeight;
+    var y = shutter_height;
     while (true) {
-        const bottomOffset = shutterHeight -| y;
-        switch (bottomOffset) {
+        const bottom_offset = shutter_height -| y;
+        switch (bottom_offset) {
             // Shutter bottom color.
-            0, 2 => try tty.setGraphicModes(&.{ .BOLD, .BACKGROUND_YELLOW }),
-            1 => try tty.setGraphicModes(&.{ .RESET_BOLD_DIM, .BACKGROUND_BLACK }),
+            0, 2 => try tty.setGraphicModes(&.{ .bold, .background_yellow }),
+            1 => try tty.setGraphicModes(&.{ .reset_bold_dim, .background_black }),
             // Shutter body color.
             else => try tty.setGraphicModes(&.{
-                .RESET_BOLD_DIM,
-                if (0 == y % 2) .BACKGROUND_WHITE else .BACKGROUND_CYAN,
+                .reset_bold_dim,
+                if (0 == y % 2) .background_white else .background_cyan,
             }),
         }
 
@@ -118,23 +119,23 @@ fn drawShutter(tty: *Tty, size: f32) !void {
 fn drawShape(tty: *Tty, character: u8, letter: Shape) !void {
     debug.assert(1 < letter.len);
 
-    var lastPoint: ?Point = null;
+    var last_point: ?Point = null;
 
     for (letter) |point| {
-        if (null == lastPoint) {
-            lastPoint = point;
+        if (null == last_point) {
+            last_point = point;
             continue;
         }
 
         const width: f32 = @floatFromInt(tty.width);
         const x1: i32 = @intFromFloat(point[0] * width);
-        const x2: i32 = @intFromFloat(lastPoint.?[0] * width);
+        const x2: i32 = @intFromFloat(last_point.?[0] * width);
         const height: f32 = @floatFromInt(tty.height);
         const y1: i32 = @intFromFloat(point[1] * height);
-        const y2: i32 = @intFromFloat(lastPoint.?[1] * height);
+        const y2: i32 = @intFromFloat(last_point.?[1] * height);
         try drawLine(tty, character, x1, x2, y1, y2);
 
-        lastPoint = point;
+        last_point = point;
     }
 }
 
@@ -155,7 +156,7 @@ fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void 
     const sy: i32 = if (y1 < y2) 1 else -1;
     var err = dx + dy;
 
-    var iterations = tty.width *| tty.height; // loop limit just in case.
+    var iterations = tty.width *| tty.height; // loop limit just-in-case.
     var x = x1;
     var y = y1;
     while (0 < iterations) {
@@ -190,34 +191,34 @@ pub fn line(
     comptime x: f32,
     comptime y: f32,
     comptime size: f32,
-    comptime letterMargin: f32,
+    comptime letter_margin: f32,
     comptime text: []const u8,
 ) [text.len]Shape {
     debug.assert(0.0 < size);
-    debug.assert(0.0 <= letterMargin);
+    debug.assert(0.0 <= letter_margin);
     debug.assert(0 < text.len);
 
     var letters: [text.len]Shape = undefined;
 
-    const letterCount: f32 = @floatFromInt(text.len);
-    const letterSize = (size - letterMargin * (letterCount - 1)) / letterCount;
+    const letter_count: f32 = @floatFromInt(text.len);
+    const letter_size = (size - letter_margin * (letter_count - 1)) / letter_count;
     var xOffset = 0.0;
 
     for (text, &letters) |character, *letter| {
         switch (character) {
-            'a', 'A' => letter.* = letterA(x + xOffset, y, letterSize),
-            'd', 'D' => letter.* = letterD(x + xOffset, y, letterSize),
-            'e', 'E' => letter.* = letterE(x + xOffset, y, letterSize),
-            'l', 'L' => letter.* = letterL(x + xOffset, y, letterSize),
-            'm', 'M' => letter.* = letterM(x + xOffset, y, letterSize),
-            'o', 'O' => letter.* = letterO(x + xOffset, y, letterSize),
-            'u', 'U' => letter.* = letterU(x + xOffset, y, letterSize),
-            'v', 'V' => letter.* = letterV(x + xOffset, y, letterSize),
-            'y', 'Y' => letter.* = letterY(x + xOffset, y, letterSize),
+            'a', 'A' => letter.* = letterA(x + xOffset, y, letter_size),
+            'd', 'D' => letter.* = letterD(x + xOffset, y, letter_size),
+            'e', 'E' => letter.* = letterE(x + xOffset, y, letter_size),
+            'l', 'L' => letter.* = letterL(x + xOffset, y, letter_size),
+            'm', 'M' => letter.* = letterM(x + xOffset, y, letter_size),
+            'o', 'O' => letter.* = letterO(x + xOffset, y, letter_size),
+            'u', 'U' => letter.* = letterU(x + xOffset, y, letter_size),
+            'v', 'V' => letter.* = letterV(x + xOffset, y, letter_size),
+            'y', 'Y' => letter.* = letterY(x + xOffset, y, letter_size),
             else => @compileError("Unhandled character: " ++ [1]u8{character}),
         }
 
-        xOffset += letterSize + letterMargin;
+        xOffset += letter_size + letter_margin;
     }
 
     return letters;

@@ -16,43 +16,43 @@ const T = posix.T;
 const NCSS = posix.NCSS;
 
 pub const GraphicMode = enum(u8) {
-    RESET_ALL = 0,
+    reset_all = 0,
     // Foreground colors.
-    FOREGROUND_BLACK = 30,
-    FOREGROUND_RED = 31,
-    FOREGROUND_GREEN = 32,
-    FOREGROUND_YELLOW = 33,
-    FOREGROUND_BLUE = 34,
-    FOREGROUND_MAGENTA = 35,
-    FOREGROUND_CYAN = 36,
-    FOREGROUND_WHITE = 37,
-    FOREGROUND_DEFAULT = 39,
+    foreground_black = 30,
+    foreground_red = 31,
+    foreground_green = 32,
+    foreground_yellow = 33,
+    foreground_blue = 34,
+    foreground_magenta = 35,
+    foreground_cyan = 36,
+    foreground_white = 37,
+    foreground_default = 39,
     // Background colors.
-    BACKGROUND_BLACK = 40,
-    BACKGROUND_RED = 41,
-    BACKGROUND_GREEN = 42,
-    BACKGROUND_YELLOW = 43,
-    BACKGROUND_BLUE = 44,
-    BACKGROUND_MAGENTA = 45,
-    BACKGROUND_CYAN = 46,
-    BACKGROUND_WHITE = 47,
-    BACKGROUND_DEFAULT = 49,
+    background_black = 40,
+    background_red = 41,
+    background_green = 42,
+    background_yellow = 43,
+    background_blue = 44,
+    background_magenta = 45,
+    background_cyan = 46,
+    background_white = 47,
+    background_default = 49,
     // Styles.
-    BOLD = 1,
-    DIM = 2,
-    RESET_BOLD_DIM = 22,
-    ITALIC = 3,
-    RESET_ITALIC = 23,
-    UNDERLINE = 4,
-    RESET_UNDERLINE = 24,
-    BLINK = 5,
-    RESET_BLINK = 25,
-    REVERSE = 7,
-    RESET_REVERSE = 27,
-    INVISIBLE = 8,
-    RESET_INVISIBLE = 28,
-    STRIKETHROUGH = 9,
-    RESET_STRIKETHROUGH = 29,
+    bold = 1,
+    dim = 2,
+    reset_bold_dim = 22,
+    italic = 3,
+    reset_italic = 23,
+    underline = 4,
+    reset_underline = 24,
+    blink = 5,
+    reset_blink = 25,
+    reverse = 7,
+    reset_reverse = 27,
+    invisible = 8,
+    reset_invisible = 28,
+    strikethrough = 9,
+    reset_strikethrough = 29,
 };
 
 pub const Error = error{
@@ -70,9 +70,9 @@ pub const Tty = struct {
 
     file: File,
     writer: Writer,
-    dynamicSize: bool = true,
+    dynamic_size: bool = true,
     saved: bool = false,
-    originalTermios: ?termios = null,
+    original_termios: ?termios = null,
 
     pub fn init(file: File) Error!Tty {
         if (!posix.isatty(file.handle)) return Error.NotATty;
@@ -84,45 +84,45 @@ pub const Tty = struct {
     }
 
     pub fn uncook(self: *Tty) Error!void {
-        debug.assert(null == self.originalTermios);
-        self.originalTermios = posix.tcgetattr(self.file.handle) catch
+        debug.assert(null == self.original_termios);
+        self.original_termios = posix.tcgetattr(self.file.handle) catch
             return Error.TermiosFail;
 
         // https://zig.news/lhp/want-to-create-a-tui-application-the-basics-of-uncooked-terminal-io-17gm
-        var newTermios = self.originalTermios.?;
-        newTermios.lflag.ECHO = false; // Do not display user typed keys.
-        newTermios.lflag.ICANON = false; // Disables canonical mode.
-        newTermios.lflag.ISIG = false; // Disables external C-c and C-z handling.
-        newTermios.lflag.IEXTEN = false; // Disables external C-v handling.
-        newTermios.iflag.IXON = false; // Disables external C-s and C-q handling.
-        newTermios.iflag.ICRNL = false; // Disables external C-j and C-m handling.
-        newTermios.oflag.OPOST = false; // Disables output processing.
+        var new_termios = self.original_termios.?;
+        new_termios.lflag.ECHO = false; // Do not display user typed keys.
+        new_termios.lflag.ICANON = false; // Disables canonical mode.
+        new_termios.lflag.ISIG = false; // Disables external C-c and C-z handling.
+        new_termios.lflag.IEXTEN = false; // Disables external C-v handling.
+        new_termios.iflag.IXON = false; // Disables external C-s and C-q handling.
+        new_termios.iflag.ICRNL = false; // Disables external C-j and C-m handling.
+        new_termios.oflag.OPOST = false; // Disables output processing.
         // Makes reads not timeout.
-        newTermios.cc[@intFromEnum(V.TIME)] = 0;
-        newTermios.cc[@intFromEnum(V.MIN)] = 0;
+        new_termios.cc[@intFromEnum(V.TIME)] = 0;
+        new_termios.cc[@intFromEnum(V.MIN)] = 0;
 
-        posix.tcsetattr(self.file.handle, .FLUSH, newTermios) catch
+        posix.tcsetattr(self.file.handle, .FLUSH, new_termios) catch
             return Error.TermiosFail;
     }
 
     pub fn configureUncookedRead(self: *Tty, time: NCSS, min: NCSS) Error!void {
-        debug.assert(null != self.originalTermios);
+        debug.assert(null != self.original_termios);
 
-        var newTermios = posix.tcgetattr(self.file.handle) catch
+        var new_termios = posix.tcgetattr(self.file.handle) catch
             return Error.TermiosFail;
-        newTermios.cc[@intFromEnum(V.TIME)] = time;
-        newTermios.cc[@intFromEnum(V.MIN)] = min;
-        posix.tcsetattr(self.file.handle, .NOW, newTermios) catch
+        new_termios.cc[@intFromEnum(V.TIME)] = time;
+        new_termios.cc[@intFromEnum(V.MIN)] = min;
+        posix.tcsetattr(self.file.handle, .NOW, new_termios) catch
             return Error.TermiosFail;
     }
 
     pub fn cook(self: *Tty) Error!void {
-        debug.assert(null != self.originalTermios);
+        debug.assert(null != self.original_termios);
 
-        posix.tcsetattr(self.file.handle, .FLUSH, self.originalTermios.?) catch
+        posix.tcsetattr(self.file.handle, .FLUSH, self.original_termios.?) catch
             return Error.TermiosFail;
 
-        self.originalTermios = null;
+        self.original_termios = null;
     }
 
     pub fn save(self: *Tty) Error!void {
@@ -150,7 +150,7 @@ pub const Tty = struct {
     pub fn update(self: *Tty) Error!void {
         self.writer.flush() catch return Error.WriteFail;
 
-        if (self.dynamicSize) getSize: {
+        if (self.dynamic_size) getSize: {
             {
                 // First try ioctl.
                 var winsize = mem.zeroes(posix.winsize);
@@ -162,7 +162,7 @@ pub const Tty = struct {
             }
             // Remaining methods are idempotent, meaning they only need to called
             // once.
-            self.dynamicSize = false;
+            self.dynamic_size = false;
             // Else try COLUMNS and LINES environment variables.
             getEnv: {
                 const width = posix.getenv("COLUMNS") orelse break :getEnv;
@@ -201,21 +201,21 @@ pub const Tty = struct {
         try self.write("\x1B[2J");
     }
 
-    pub fn setGraphicModes(self: *Tty, graphicModes: []const GraphicMode) Error!void {
-        debug.assert(0 != graphicModes.len);
+    pub fn setGraphicModes(self: *Tty, graphic_modes: []const GraphicMode) Error!void {
+        debug.assert(0 != graphic_modes.len);
 
         try self.write("\x1B[");
         var first = true;
-        for (graphicModes) |graphicMode| {
+        for (graphic_modes) |graphic_mode| {
             if (!first) try self.write(";");
-            try self.writeFmt("{d}", .{@intFromEnum(graphicMode)});
+            try self.writeFmt("{d}", .{@intFromEnum(graphic_mode)});
             first = false;
         }
         try self.write("m");
     }
 
     pub inline fn resetGraphicModes(self: *Tty) Error!void {
-        try self.writeFmt("\x1B[{d}m", .{@intFromEnum(GraphicMode.RESET_ALL)});
+        try self.writeFmt("\x1B[{d}m", .{@intFromEnum(GraphicMode.reset_all)});
     }
 
     pub fn cursor(self: *Tty, enable: bool) Error!void {
