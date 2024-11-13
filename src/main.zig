@@ -234,7 +234,7 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
     try tty.resetGraphicModes();
     try tty.clear();
 
-    switch (static.scene) {
+    try switch (static.scene) {
         // Shutter opening up to show text.
         0 => {
             try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
@@ -277,8 +277,6 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
             }
         },
 
-        else => unreachable,
-    }
         // Text changes to a static red and cyan.
         2 => {
             try tty.setGraphicModes(&.{GraphicMode.BACKGROUND_RED});
@@ -294,9 +292,11 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
                 static.scene +|= 1;
             }
         },
+
+        else => error.EndOfPlay,
+    };
 }
 
-// TODO undo changes to terminal on close.
 // TODO added comand line options for saying love you dad.
 // TODO document functions.
 // TODO exit on keypress.
@@ -326,7 +326,16 @@ pub fn main() !void {
         }
 
         const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
-        try draw(&tty, deltaTime_s);
+        draw(&tty, deltaTime_s) catch |err| switch (err) {
+            error.EndOfPlay => break,
+            else => |leftover_err| return leftover_err,
+        };
         try tty.update();
     }
+
+    try tty.cursor(true);
+    try tty.resetGraphicModes();
+    try tty.clear();
+    try tty.home();
+    try tty.update();
 }
