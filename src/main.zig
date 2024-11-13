@@ -48,6 +48,8 @@ const loveYouMomText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom
 const loveYouDadText = loveYouText ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
 
 // TODO document functions.
+// TODO add license.
+// TODO add README.
 pub fn main() !void {
     var stdout: FileWriter = .{ .unbuffered_writer = io.getStdOut().writer() };
     var text = loveYouMomText;
