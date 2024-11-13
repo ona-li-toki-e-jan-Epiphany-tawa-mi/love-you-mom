@@ -48,7 +48,7 @@ pub fn main() !void {
     defer ttyFile.close();
 
     var tty = Tty.init(ttyFile) catch |err| switch (err) {
-        ttwhy.Error.NotATty => {
+        error.NotATty => {
             log.err(
                 "/dev/tty is not a tty! The sky is falling, Chicken Little!",
                 .{},

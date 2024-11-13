@@ -121,21 +121,12 @@ fn drawShutter(tty: *Tty, size: f32) !void {
         const bottomOffset = shutterHeight -| y;
         switch (bottomOffset) {
             // Shutter bottom color.
-            0, 2 => try tty.setGraphicModes(&.{
-                GraphicMode.BOLD,
-                GraphicMode.BACKGROUND_YELLOW,
-            }),
-            1 => try tty.setGraphicModes(&.{
-                GraphicMode.RESET_BOLD_DIM,
-                GraphicMode.BACKGROUND_BLACK,
-            }),
+            0, 2 => try tty.setGraphicModes(&.{ .BOLD, .BACKGROUND_YELLOW }),
+            1 => try tty.setGraphicModes(&.{ .RESET_BOLD_DIM, .BACKGROUND_BLACK }),
             // Shutter body color.
             else => try tty.setGraphicModes(&.{
-                GraphicMode.RESET_BOLD_DIM,
-                if (0 == y % 2)
-                    GraphicMode.BACKGROUND_WHITE
-                else
-                    GraphicMode.BACKGROUND_CYAN,
+                .RESET_BOLD_DIM,
+                if (0 == y % 2) .BACKGROUND_WHITE else .BACKGROUND_CYAN,
             }),
         }
 
@@ -238,7 +229,7 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
     try switch (static.scene) {
         // Shutter opening up to show text.
         0 => {
-            try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
+            try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
             for (loveYouMomText) |letter| {
                 try drawShape(tty, '#', letter);
             }
@@ -256,17 +247,14 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
         // Text blinks between green and bright green.
         1 => {
             if (1.0 < static.textToggleTime_s) {
-                try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
+                try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
 
                 if (2.0 < static.textToggleTime_s) {
                     static.textToggleTime_s = 0.0;
                     static.textToggleCycles -|= 1;
                 }
             } else {
-                try tty.setGraphicModes(&.{
-                    GraphicMode.BOLD,
-                    GraphicMode.FOREGROUND_GREEN,
-                });
+                try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_GREEN });
             }
             for (loveYouMomText) |letter| {
                 try drawShape(tty, '#', letter);
@@ -280,10 +268,10 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
 
         // Text changes to a static red and cyan.
         2 => {
-            try tty.setGraphicModes(&.{GraphicMode.BACKGROUND_RED});
+            try tty.setGraphicModes(&.{.BACKGROUND_RED});
             try tty.clear();
 
-            try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_CYAN });
+            try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_CYAN });
             for (loveYouMomText) |letter| {
                 try drawShape(tty, '#', letter);
             }

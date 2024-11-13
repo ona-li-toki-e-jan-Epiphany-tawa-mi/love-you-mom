@@ -11,8 +11,8 @@ const debug = std.debug;
 const Allocator = mem.Allocator;
 const File = fs.File;
 const termios = posix.termios;
-const TCSA = posix.TCSA;
 const V = posix.V;
+const T = posix.T;
 
 pub const GraphicMode = enum(u8) {
     RESET_ALL = 0,
@@ -145,7 +145,7 @@ pub const Tty = struct {
             {
                 // First try ioctl.
                 var winsize = mem.zeroes(posix.winsize);
-                if (-1 != c.ioctl(self.file.handle, posix.T.IOCGWINSZ, &winsize)) {
+                if (-1 != c.ioctl(self.file.handle, T.IOCGWINSZ, &winsize)) {
                     self.width = winsize.ws_col;
                     self.height = winsize.ws_row;
                     break :getSize;
