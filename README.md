@@ -9,7 +9,6 @@ Press ANY KEY to exit.
 Depdenencies:
 
 - libc.
-- POSIX system.
 - zig 0.13.0 (other versions may work) - [https://ziglang.org](https://ziglang.org/)
 
 There's a `flake.nix` you can use to generate a development enviroment with
@@ -21,13 +20,13 @@ Then, run the following command(s):
 zig build
 ```
 
+You can append the following arguments for different optimizations:
+
+- `-Doptimize=ReleaseSafe` - Faster.
+- `-Doptimize=ReleaseFast` - Fasterer, no safety checks.
+- `-Doptimize=ReleaseSmall` - Faster, smaller binaries, no safety checks.
+
 The executable will appear in `zig-out/bin/`.
-
-You can append `run` to immediately run the executable after it is built, i.e.:
-
-```sh
-zig build run -- --help
-```
 
 ## How to run
 
