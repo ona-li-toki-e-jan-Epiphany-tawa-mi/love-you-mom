@@ -67,15 +67,13 @@ pub const Tty = struct {
     writer: Writer,
     width: u16,
     height: u16,
-    allocator: Allocator,
 
-    pub fn init(file: File, allocator: Allocator) Error!Tty {
+    pub fn init(file: File) Error!Tty {
         var tty = Tty{
             .file = file,
             .writer = writer(file),
             .width = undefined,
             .height = undefined,
-            .allocator = allocator,
         };
 
         if (!posix.isatty(file.handle)) return Error.NotATty;
@@ -99,10 +97,8 @@ pub const Tty = struct {
             }
             // Else try COLUMNS and LINES environment variables.
             getEnv: {
-                var env = process.getEnvMap(self.allocator) catch break :getEnv;
-                defer env.deinit();
-                const width = env.get("COLUMNS") orelse break :getEnv;
-                const height = env.get("LINES") orelse break :getEnv;
+                const width = posix.getenv("COLUMNS") orelse break :getEnv;
+                const height = posix.getenv("LINES") orelse break :getEnv;
                 self.width = fmt.parseInt(u16, width, 10) catch break :getEnv;
                 self.height = fmt.parseInt(u16, height, 10) catch break :getEnv;
                 break :getSize;
