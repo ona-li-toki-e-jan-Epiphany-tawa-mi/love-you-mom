@@ -2,6 +2,7 @@ const std = @import("std");
 const log = std.log;
 const io = std.io;
 const time = std.time;
+const fs = std.fs;
 const ttwhy = @import("ttwhy.zig");
 const graphics = @import("graphics.zig");
 
@@ -37,11 +38,16 @@ fn run(tty: *Tty) !void {
 // TODO exit on keypress.
 // TODO hide typed characters.
 pub fn main() !void {
-    const stdin = io.getStdIn();
-    var tty = Tty.init(stdin) catch |err| switch (err) {
+    const ttyFile = fs.cwd().openFile("/dev/tty", .{ .mode = .read_write }) catch |err| {
+        log.err("Unable to open /dev/tty. You need to run this program in a terminal", .{});
+        return err;
+    };
+    defer ttyFile.close();
+
+    var tty = Tty.init(ttyFile) catch |err| switch (err) {
         ttwhy.Error.NotATty => {
             log.err(
-                "stdin is not a tty! You need to use this program with a terminal emulator",
+                "/dev/tty is not a tty! The sky is falling, Chicken Little!",
                 .{},
             );
             return err;
