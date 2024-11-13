@@ -186,7 +186,6 @@ fn drawLine(tty: *Tty, character: u8, x1: i32, x2: i32, y1: i32, y2: i32) !void 
 pub const Point = [2]f32;
 pub const Shape = []const Point;
 
-// TODO Add assertions to line and letter functions that x, y, and size are within bounds.
 pub fn line(
     comptime x: f32,
     comptime y: f32,
@@ -194,6 +193,10 @@ pub fn line(
     comptime letterMargin: f32,
     comptime text: []const u8,
 ) [text.len]Shape {
+    debug.assert(0.0 < size);
+    debug.assert(0.0 <= letterMargin);
+    debug.assert(0 < text.len);
+
     var letters: [text.len]Shape = undefined;
 
     const letterCount: f32 = @floatFromInt(text.len);
@@ -221,6 +224,7 @@ pub fn line(
 }
 
 fn letterA(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y + size },
         Point{ x + 0.5 * size, y },
@@ -230,6 +234,7 @@ fn letterA(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterD(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x, y + size },
@@ -238,6 +243,7 @@ fn letterD(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x + size, y },
@@ -249,6 +255,7 @@ fn letterE(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x, y + size },
@@ -256,6 +263,7 @@ fn letterL(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y + size },
         Point{ x, y },
@@ -265,6 +273,7 @@ fn letterM(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y + 0.5 * size },
         Point{ x + 0.5 * size, y },
@@ -274,6 +283,7 @@ fn letterO(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x, y + size },
@@ -282,6 +292,7 @@ fn letterU(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x + 0.5 * size, y + size },
@@ -289,6 +300,7 @@ fn letterV(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
     };
 }
 fn letterY(comptime x: f32, comptime y: f32, comptime size: f32) Shape {
+    debug.assert(0.0 < size);
     return &.{
         Point{ x, y },
         Point{ x + 0.5 * size, y + 0.5 * size },
