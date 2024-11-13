@@ -65,23 +65,35 @@ pub const Tty = struct {
     file: File,
     writer: Writer,
 
-    dynamicSize: bool,
-    width: u16,
-    height: u16,
+    dynamicSize: bool = true,
+    width: u16 = undefined,
+    height: u16 = undefined,
 
     pub fn init(file: File) Error!Tty {
         var tty = Tty{
             .file = file,
             .writer = writer(file),
-            .dynamicSize = true,
-            .width = undefined,
-            .height = undefined,
         };
 
         if (!posix.isatty(file.handle)) return Error.NotATty;
-        try tty.update();
 
+        // Saves original terminal state.
+        // \x1B[s      - Save cursor position.
+        // \x1B[?47h   - Save screen.
+        // \x1B[?1049h - Enable alternative buffer.
+        try tty.write("\x1B[s\x1B[?47h\x1B[?1049h");
+
+        try tty.update();
         return tty;
+    }
+
+    pub fn deinit(self: *Tty) void {
+        // Restores original terminal state.
+        // \x1B[?1049l - Disable alternative buffer.
+        // \x1B[?47l   - Restore screen.
+        // \x1B[u      - Restore cursor position.
+        self.write("\x1B[?1049l\x1B[?47l\x1B[u") catch {};
+        self.update() catch {};
     }
 
     pub fn update(self: *Tty) Error!void {

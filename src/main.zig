@@ -31,15 +31,12 @@ fn run(tty: *Tty) !void {
     }
 
     try tty.cursor(true);
-    try tty.resetGraphicModes();
-    try tty.clear();
-    try tty.home();
-    try tty.update();
 }
 
 // TODO added comand line options for saying love you dad.
 // TODO document functions.
 // TODO exit on keypress.
+// TODO hide typed characters.
 pub fn main() !void {
     const stdin = io.getStdIn();
     var tty = Tty.init(stdin) catch |err| switch (err) {
@@ -54,4 +51,6 @@ pub fn main() !void {
     };
 
     try run(&tty);
+
+    tty.deinit();
 }
