@@ -70,30 +70,29 @@ pub const Tty = struct {
     height: u16 = undefined,
 
     pub fn init(file: File) Error!Tty {
-        var tty = Tty{
+        if (!posix.isatty(file.handle)) return Error.NotATty;
+
+        return Tty{
             .file = file,
             .writer = writer(file),
         };
+    }
 
-        if (!posix.isatty(file.handle)) return Error.NotATty;
-
-        // Saves original terminal state.
+    pub fn save(self: *Tty) !void {
         // \x1B[s      - Save cursor position.
         // \x1B[?47h   - Save screen.
         // \x1B[?1049h - Enable alternative buffer.
-        try tty.write("\x1B[s\x1B[?47h\x1B[?1049h");
-
-        try tty.update();
-        return tty;
+        try self.write("\x1B[s\x1B[?47h\x1B[?1049h");
+        try self.update();
     }
 
-    pub fn deinit(self: *Tty) void {
+    pub fn restore(self: *Tty) !void {
         // Restores original terminal state.
         // \x1B[?1049l - Disable alternative buffer.
         // \x1B[?47l   - Restore screen.
         // \x1B[u      - Restore cursor position.
-        self.write("\x1B[?1049l\x1B[?47l\x1B[u") catch {};
-        self.update() catch {};
+        try self.write("\x1B[?1049l\x1B[?47l\x1B[u");
+        try self.update();
     }
 
     pub fn update(self: *Tty) Error!void {

@@ -14,6 +14,7 @@ const nanosecondsPerFrame: u64 = nanosecondsPerSecond / fps;
 
 fn run(tty: *Tty) !void {
     try tty.cursor(false);
+    defer tty.cursor(true) catch {};
 
     var timer = try Timer.start();
     while (true) {
@@ -29,8 +30,6 @@ fn run(tty: *Tty) !void {
         };
         try tty.update();
     }
-
-    try tty.cursor(true);
 }
 
 // TODO added comand line options for saying love you dad.
@@ -49,8 +48,8 @@ pub fn main() !void {
         },
         else => |leftover_err| return leftover_err,
     };
+    try tty.save();
+    defer tty.restore() catch {};
 
     try run(&tty);
-
-    tty.deinit();
 }
