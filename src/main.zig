@@ -220,16 +220,11 @@ const loveYouMomText =
 // TODO document functions.
 // TODO exit on keypress.
 pub fn main() !void {
-    const allocator = heap.c_allocator;
     const stdin = io.getStdIn();
 
-    var tty = Tty.init(stdin, allocator) catch |err| switch (err) {
+    var tty = Tty.init(stdin) catch |err| switch (err) {
         ttwhy.Error.NotATty => {
             log.err("stdin is not a tty! You need to use this program with a terminal emulator", .{});
-            return err;
-        },
-        ttwhy.Error.UnknownSize => {
-            log.err("Unable to get terminal size", .{});
             return err;
         },
         else => |leftover_err| return leftover_err,

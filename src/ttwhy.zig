@@ -53,7 +53,6 @@ pub const GraphicMode = enum(u8) {
 
 pub const Error = error{
     NotATty,
-    UnknownSize,
     WriteFail,
 };
 
@@ -65,6 +64,8 @@ inline fn writer(file: File) Writer {
 pub const Tty = struct {
     file: File,
     writer: Writer,
+
+    dynamicSize: bool,
     width: u16,
     height: u16,
 
@@ -72,6 +73,7 @@ pub const Tty = struct {
         var tty = Tty{
             .file = file,
             .writer = writer(file),
+            .dynamicSize = true,
             .width = undefined,
             .height = undefined,
         };
@@ -85,9 +87,9 @@ pub const Tty = struct {
     pub fn update(self: *Tty) Error!void {
         self.writer.flush() catch return Error.WriteFail;
 
-        getSize: {
-            // First try ioctl.
+        if (self.dynamicSize) getSize: {
             {
+                // First try ioctl.
                 var winsize = mem.zeroes(posix.winsize);
                 if (-1 != c.ioctl(self.file.handle, posix.T.IOCGWINSZ, &winsize)) {
                     self.width = winsize.ws_col;
@@ -95,6 +97,9 @@ pub const Tty = struct {
                     break :getSize;
                 }
             }
+            // Remaining methods are idempotent, meaning they only need to called
+            // once.
+            self.dynamicSize = false;
             // Else try COLUMNS and LINES environment variables.
             getEnv: {
                 const width = posix.getenv("COLUMNS") orelse break :getEnv;
@@ -103,8 +108,9 @@ pub const Tty = struct {
                 self.height = fmt.parseInt(u16, height, 10) catch break :getEnv;
                 break :getSize;
             }
-            // Else error.
-            return Error.UnknownSize;
+            // Else assume size.
+            self.width = 80;
+            self.height = 24;
         }
     }
 
