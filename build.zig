@@ -1,6 +1,8 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+const Build = std.Build;
+
+pub fn build(b: *Build) void {
     // Default build options.
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
