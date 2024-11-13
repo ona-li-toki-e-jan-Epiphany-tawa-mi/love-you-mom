@@ -25,10 +25,7 @@ fn run(tty: *Tty) !void {
         }
 
         const deltaTime_s = @as(f64, @floatFromInt(deltaTime_ns)) / nanosecondsPerSecond;
-        graphics.draw(tty, deltaTime_s) catch |err| switch (err) {
-            error.EndOfPlay => break,
-            else => |leftover_err| return leftover_err,
-        };
+        try graphics.draw(tty, deltaTime_s);
         try tty.update();
 
         // Exits if any key is pressed.

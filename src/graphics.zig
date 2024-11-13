@@ -219,14 +219,12 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
         // Scene 1.
         var textToggleTime_s: f64 = 0.0;
         var textToggleCycles: u8 = 3;
-        // Scene 2.
-        var scene2Time_s: f64 = 3.0;
     };
 
     try tty.resetGraphicModes();
     try tty.clear();
 
-    try switch (static.scene) {
+    switch (static.scene) {
         // Shutter opening up to show text.
         0 => {
             try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
@@ -275,13 +273,8 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
             for (loveYouMomText) |letter| {
                 try drawShape(tty, '#', letter);
             }
-
-            static.scene2Time_s -= deltaTime_s;
-            if (0.0 >= static.scene2Time_s) {
-                static.scene +|= 1;
-            }
         },
 
-        else => error.EndOfPlay,
-    };
+        else => unreachable,
+    }
 }
