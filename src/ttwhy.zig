@@ -13,6 +13,7 @@ const File = fs.File;
 const termios = posix.termios;
 const V = posix.V;
 const T = posix.T;
+const NCSS = posix.NCSS;
 
 pub const GraphicMode = enum(u8) {
     RESET_ALL = 0,
@@ -99,11 +100,22 @@ pub const Tty = struct {
         newTermios.iflag.IXON = false; // Disables external C-s and C-q handling.
         newTermios.iflag.ICRNL = false; // Disables external C-j and C-m handling.
         newTermios.oflag.OPOST = false; // Disables output processing.
-        // Makes reads not timeout. TODO make configurable.
+        // Makes reads not timeout.
         newTermios.cc[@intFromEnum(V.TIME)] = 0;
         newTermios.cc[@intFromEnum(V.MIN)] = 0;
 
         posix.tcsetattr(self.file.handle, .FLUSH, newTermios) catch
+            return Error.TermiosFail;
+    }
+
+    pub fn configureUncookedRead(self: *Tty, time: NCSS, min: NCSS) Error!void {
+        debug.assert(null != self.originalTermios);
+
+        var newTermios = posix.tcgetattr(self.file.handle) catch
+            return Error.TermiosFail;
+        newTermios.cc[@intFromEnum(V.TIME)] = time;
+        newTermios.cc[@intFromEnum(V.MIN)] = min;
+        posix.tcsetattr(self.file.handle, .NOW, newTermios) catch
             return Error.TermiosFail;
     }
 
