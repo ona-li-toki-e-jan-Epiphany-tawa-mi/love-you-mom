@@ -210,46 +210,50 @@ const loveYouMomText =
     line(0.125, 0.7, 0.75, 0.05, "mom");
 
 pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
-    debug.assert(deltaTime_s > 0.0);
-
-    const static = struct {
+    const statics = struct {
         var scene: u8 = 0;
-        // Scene 0.
-        var shutterSize: f32 = 1.0;
-        // Scene 1.
-        var textToggleTime_s: f64 = 0.0;
-        var textToggleCycles: u8 = 3;
     };
+
+    debug.assert(deltaTime_s > 0.0);
 
     try tty.resetGraphicModes();
     try tty.clear();
 
-    switch (static.scene) {
+    switch (statics.scene) {
         // Shutter opening up to show text.
         0 => {
+            const sceneStatics = struct {
+                var shutterSize: f32 = 1.0;
+            };
+
             try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
             for (loveYouMomText) |letter| {
                 try drawShape(tty, '#', letter);
             }
 
-            if (static.shutterSize > 0.0) {
+            if (sceneStatics.shutterSize > 0.0) {
                 try tty.resetGraphicModes();
-                try drawShutter(tty, static.shutterSize);
+                try drawShutter(tty, sceneStatics.shutterSize);
                 const shutterSpeed = comptime 0.2;
-                static.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
+                sceneStatics.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
             } else {
-                static.scene +|= 1;
+                statics.scene +|= 1;
             }
         },
 
         // Text blinks between green and bright green.
         1 => {
-            if (1.0 < static.textToggleTime_s) {
+            const sceneStatics = struct {
+                var toggleTime_s: f64 = 0.0;
+                var toggleCycles: u8 = 3;
+            };
+
+            if (1.0 < sceneStatics.toggleTime_s) {
                 try tty.setGraphicModes(&.{.FOREGROUND_GREEN});
 
-                if (2.0 < static.textToggleTime_s) {
-                    static.textToggleTime_s = 0.0;
-                    static.textToggleCycles -|= 1;
+                if (2.0 < sceneStatics.toggleTime_s) {
+                    sceneStatics.toggleTime_s = 0.0;
+                    sceneStatics.toggleCycles -|= 1;
                 }
             } else {
                 try tty.setGraphicModes(&.{ .BOLD, .FOREGROUND_GREEN });
@@ -258,9 +262,9 @@ pub fn draw(tty: *Tty, deltaTime_s: f64) !void {
                 try drawShape(tty, '#', letter);
             }
 
-            static.textToggleTime_s += deltaTime_s;
-            if (0 == static.textToggleCycles) {
-                static.scene +|= 1;
+            sceneStatics.toggleTime_s += deltaTime_s;
+            if (0 == sceneStatics.toggleCycles) {
+                statics.scene +|= 1;
             }
         },
 
