@@ -218,22 +218,57 @@ const loveYouMomText =
     line(0.125, 0.7, 0.75, 0.05, "mom");
 
 fn draw(tty: *Tty, deltaTime_s: f64) !void {
+    debug.assert(deltaTime_s > 0.0);
+
     const static = struct {
+        var scene: u8 = 0;
+        // Scene 1.
         var shutterSize: f32 = 1.0;
+        // Scene 2.
+        var textToggleTime: f64 = 0.0;
     };
 
     try tty.resetGraphicModes();
     try tty.clear();
 
-    try tty.setGraphicModes(&.{ GraphicMode.BOLD, GraphicMode.FOREGROUND_GREEN });
-    for (loveYouMomText) |letter| {
-        try drawShape(tty, '#', letter);
-    }
+    switch (static.scene) {
+        0 => {
+            try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
+            for (loveYouMomText) |letter| {
+                try drawShape(tty, '#', letter);
+            }
 
-    if (static.shutterSize > 0.0) {
-        try drawShutter(tty, static.shutterSize);
-        const shutterSpeed = 0.1;
-        static.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
+            if (static.shutterSize > 0.0) {
+                try tty.resetGraphicModes();
+                try drawShutter(tty, static.shutterSize);
+                const shutterSpeed = comptime 0.2;
+                static.shutterSize -= shutterSpeed * @as(f32, @floatCast(deltaTime_s));
+            } else {
+                static.scene +|= 1;
+            }
+        },
+
+        1 => {
+            if (1.0 < static.textToggleTime) {
+                try tty.setGraphicModes(&.{GraphicMode.FOREGROUND_GREEN});
+
+                if (2.0 < static.textToggleTime) {
+                    static.textToggleTime = 0.0;
+                }
+            } else {
+                try tty.setGraphicModes(&.{
+                    GraphicMode.BOLD,
+                    GraphicMode.FOREGROUND_GREEN,
+                });
+            }
+            for (loveYouMomText) |letter| {
+                try drawShape(tty, '#', letter);
+            }
+
+            static.textToggleTime += deltaTime_s;
+        },
+
+        else => unreachable,
     }
 }
 
@@ -242,7 +277,7 @@ fn draw(tty: *Tty, deltaTime_s: f64) !void {
 // TODO document functions.
 // TODO exit on keypress.
 pub fn main() !void {
-    const fps = 15;
+    const fps = comptime 15;
     const nanosecondsPerFrame: u64 = comptime nanosecondsPerSecond / fps;
 
     const stdin = io.getStdIn();
