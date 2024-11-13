@@ -63,9 +63,6 @@ pub const Error = error{
 };
 
 pub const Writer = io.BufferedWriter(4096, File.Writer);
-inline fn writer(file: File) Writer {
-    return .{ .unbuffered_writer = file.writer() };
-}
 
 pub const Tty = struct {
     width: u16 = undefined,
@@ -82,7 +79,7 @@ pub const Tty = struct {
 
         return Tty{
             .file = file,
-            .writer = writer(file),
+            .writer = .{ .unbuffered_writer = file.writer() },
         };
     }
 
