@@ -66,7 +66,6 @@ const love_you_text =
 const love_you_mom_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "mom");
 const love_you_dad_text = love_you_text ++ graphics.line(0.125, 0.7, 0.75, 0.05, "dad");
 
-// TODO add license.
 pub fn main() !void {
     var stdout = BufferedFileWriter{ .unbuffered_writer = io.getStdOut().writer() };
     var text = love_you_mom_text;
