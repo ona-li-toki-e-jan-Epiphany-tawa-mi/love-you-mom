@@ -41,3 +41,13 @@ Then, run the following commands(s) to get started:
 ```sh
 ./zig-out/bin/love-you-mom --help
 ```
+
+## Installation
+
+You can install it with Nix from the NUR
+([https://github.com/nix-community/NUR](https://github.com/nix-community/NUR))
+with the following attribute:
+
+```nix
+nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.love-you-mom
+```
