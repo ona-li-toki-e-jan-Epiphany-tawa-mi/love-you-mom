@@ -30,7 +30,7 @@
     in {
       devShells = forAllSystems ({ pkgs }: {
         default = with pkgs; mkShell {
-          nativeBuildInputs = [
+          packages = [
             zig_0_13
           ];
         };

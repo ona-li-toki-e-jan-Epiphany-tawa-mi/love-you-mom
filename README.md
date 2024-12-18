@@ -12,7 +12,7 @@ Depdenencies:
 - zig 0.13.0 (other versions may work) - [https://ziglang.org](https://ziglang.org/)
 
 There's a `flake.nix` you can use to generate a development enviroment with
-`nix develop path:.`.
+`nix develop`.
 
 Then, run the following command(s):
 
