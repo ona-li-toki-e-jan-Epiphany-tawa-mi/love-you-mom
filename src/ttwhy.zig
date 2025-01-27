@@ -1,32 +1,21 @@
-//! This file is part of ttwhy.
+//! This file is part of love-you-mom.
 //!
 //! Copyright (c) 2024 ona-li-toki-e-jan-Epiphany-tawa-mi
 //!
-//! ttwhy is free software: you can redistribute it and/or modify it under the
-//! terms of the GNU General Public License as published by the Free Software
-//! Foundation, either version 3 of the License, or (at your option) any later
-//! version.
+//! love-you-mom is free software: you can redistribute it and/or modify it
+//! under the terms of the GNU General Public License as published by the Free
+//! Software Foundation, either version 3 of the License, or (at your option)
+//! any later version.
 //!
-//! ttwhy is distributed in the hope that it will be useful, but WITHOUT ANY
-//! WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-//! FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-//! details.
+//! love-you-mom is distributed in the hope that it will be useful, but WITHOUT
+//! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//! FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+//! more details.
 //!
 //! You should have received a copy of the GNU General Public License along with
-//! ttwhy. If not, see <https://www.gnu.org/licenses/>.
+//! love-you-mom. If not, see <https://www.gnu.org/licenses/>.
 //! ----------------------------------------------------------------------------
-//! ttwhy terminal interface library.
-//!
-//! For POSIX systems and terminals that support ANSI codes and termios.
-//! Requires libc.
-//!
-//! I add features to this library as-needed, so it may be missing something you
-//! need. This library already handles the big problems (like getting terminal
-//! size and dealing with termios,) so extending it should be easy peasy lemon
-//! squeezy.
-//!
-//! Author: ona-li-toki-e-jan-Epiphany-tawa-mi
-//! Version: 0.1.0.
+//! Terminal graphics interface.
 
 const std = @import("std");
 const fs = std.fs;
