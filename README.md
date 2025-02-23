@@ -32,4 +32,4 @@ The executable will appear in `zig-out/bin/`.
 ## Installation
 
 You can install it with Nix from my personal package repository
-[https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/epitaphpkgs](https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/epitaphpkgs).
+[https://paltepuk.xyz/cgit/epitaphpkgs.git/about](https://paltepuk.xyz/cgit/epitaphpkgs.git/about).
