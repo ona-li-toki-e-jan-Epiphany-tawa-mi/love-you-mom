@@ -22,18 +22,15 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs = { nixpkgs, ... }:
-    let inherit (nixpkgs.lib) genAttrs systems;
+    let
+      inherit (nixpkgs.lib) genAttrs systems;
 
-        forAllSystems = f: genAttrs systems.flakeExposed (system: f {
-          pkgs = import nixpkgs { inherit system; };
-        });
+      forAllSystems = f:
+        genAttrs systems.flakeExposed
+        (system: f { pkgs = import nixpkgs { inherit system; }; });
     in {
       devShells = forAllSystems ({ pkgs }: {
-        default = with pkgs; mkShell {
-          packages = [
-            zig_0_13
-          ];
-        };
+        default = with pkgs; mkShell { packages = [ zig_0_13 ]; };
       });
     };
 }
